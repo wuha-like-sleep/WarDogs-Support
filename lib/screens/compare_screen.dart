@@ -42,6 +42,13 @@ class _CompareScreenState extends State<CompareScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
         children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              '已收录数值的 ${ranked.length} 把枪（游戏共 ${kWeapons.length} 把）',
+              style: const TextStyle(color: C.textDim, fontSize: 14),
+            ),
+          ),
           _Seg(
             labels: _ammoNames,
             index: _ammo,
@@ -60,8 +67,10 @@ class _CompareScreenState extends State<CompareScreen> {
               category: w.category,
               value: _damageOf(w),
               ratio: top <= 0 ? 0 : _damageOf(w) / top,
-              // 一枪爆头带走
-              lethal: _damageOf(w) >= 100,
+              // 金色标的是「这一组里最高」——一个页面上就能核对的事实。
+              // 别改回按固定血量判「一枪带走」：玩家血量多少没有任何公开出处，
+              // 猜错会让人拿着打不死人的枪去拼。
+              best: ranked.isNotEmpty && w.name == ranked.first.name,
             ),
           const SizedBox(height: 16),
           Container(
@@ -80,7 +89,7 @@ class _CompareScreenState extends State<CompareScreen> {
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
-                  child: Text('金色 = 爆头一枪带走',
+                  child: Text('金色 = 本组伤害最高',
                       style: TextStyle(color: C.textDim, fontSize: 14)),
                 ),
               ],
@@ -150,19 +159,19 @@ class _Bar extends StatelessWidget {
   final String category;
   final double value;
   final double ratio;
-  final bool lethal;
+  final bool best;
 
   const _Bar({
     required this.name,
     required this.category,
     required this.value,
     required this.ratio,
-    required this.lethal,
+    required this.best,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = lethal ? C.gold : C.textDim;
+    final color = best ? C.gold : C.textDim;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
@@ -199,7 +208,7 @@ class _Bar extends StatelessWidget {
               minHeight: 8,
               backgroundColor: C.surfaceHigh,
               valueColor: AlwaysStoppedAnimation(
-                  lethal ? C.gold : C.border),
+                  best ? C.gold : C.border),
             ),
           ),
         ],

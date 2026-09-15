@@ -9,6 +9,10 @@ import 'history_screen.dart';
 /// 四个输入框的顺序，「下一项」按这个顺序走
 enum Field { gunX, gunY, tgtX, tgtY }
 
+/// 坐标最多这么长。游戏里的坐标形如 104.52，8 位足够，
+/// 超了只可能是误触追加出来的垃圾（还会把输入框撑爆）。
+const int kMaxCoordLength = 8;
+
 class MortarScreen extends StatefulWidget {
   const MortarScreen({super.key});
 
@@ -25,7 +29,37 @@ class _MortarScreenState extends State<MortarScreen> {
   };
 
   Field? _focus = Field.gunX;
+
+  /// 刚切到这个格子、还没按过数字。此时按第一个数字表示重打，
+  /// 而不是接在旧值后面 —— 否则「67.56」上接着敲会变成「67.567012」，
+  /// 一个完全合法、解析得出、但错得离谱的坐标。
+  bool _freshFocus = true;
+
+  /// 小屏（iPhone SE 375×667）上键盘占掉 313px，敌人坐标那两个格子
+  /// 会整块落在折叠线以下。切焦点时把当前格子滚进视野，
+  /// 否则玩家是在看不见输入框的情况下敲坐标。
+  final _fieldKeys = {for (final f in Field.values) f: GlobalKey()};
+
+  void _ensureFocusVisible() {
+    final f = _focus;
+    if (f == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _fieldKeys[f]?.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.35,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
   double _offsetX = 0, _offsetY = 0;
+
+  /// 用容差判零。步长 5/10/15/20 米时偏移是 0.05 这类二进制除不尽的数，
+  /// 上下各按三次回到原点会剩 2.8e-17，用 != 0 判会让「已矫正 东 0 m · 北 0 m」
+  /// 这行自相矛盾的提示永远消不掉。
+  bool get _offsetIsSet => _offsetX.abs() > 1e-9 || _offsetY.abs() > 1e-9;
   int _step = 25;
   List<SavedCoord> _saved = const [];
   List<ShotRecord> _shots = const [];
@@ -51,6 +85,7 @@ class _MortarScreenState extends State<MortarScreen> {
       // 炮位一局之内不动。上次记着就直接跳到敌人坐标，省掉两次点击
       if (gx.isNotEmpty && gy.isNotEmpty) _focus = Field.tgtX;
     });
+    _ensureFocusVisible();
   }
 
   double? _val(Field f) => double.tryParse(_text[f]!);
@@ -73,10 +108,18 @@ class _MortarScreenState extends State<MortarScreen> {
   /// 静默偏掉，界面还一切正常。这是这个 App 最致命的一类错误。
   /// 必须在 setState 里调用；返回是否真的清掉了东西。
   bool _dropStaleOffset() {
-    if (_offsetX == 0 && _offsetY == 0) return false;
+    if (!_offsetIsSet) return false;
     _offsetX = 0;
     _offsetY = 0;
     return true;
+  }
+
+  void _focusField(Field f) {
+    setState(() {
+      _focus = f;
+      _freshFocus = true;
+    });
+    _ensureFocusVisible();
   }
 
   void _onKey(KeypadKey k) {
@@ -89,7 +132,11 @@ class _MortarScreenState extends State<MortarScreen> {
       case KeyKind.next:
         if (f == null) return;
         final next = Field.values[(f.index + 1) % Field.values.length];
-        setState(() => _focus = next);
+        setState(() {
+          _focus = next;
+          _freshFocus = true;
+        });
+        _ensureFocusVisible();
         return;
       default:
         break;
@@ -102,10 +149,17 @@ class _MortarScreenState extends State<MortarScreen> {
       var s = _text[f]!;
       switch (k.kind) {
         case KeyKind.digit:
-          s += k.label;
+          if (_freshFocus) s = '';
+          if (s.length < kMaxCoordLength) s += k.label;
         case KeyKind.dot:
-          if (!s.contains('.')) s = s.isEmpty ? '0.' : '$s.';
+          if (_freshFocus) s = '';
+          if (!s.contains('.') && s.length < kMaxCoordLength) {
+            s = s.isEmpty ? '0.' : '$s.';
+          }
         case KeyKind.minus:
+          // 空格子上按负号只会得到一个孤零零的 "-"：看着像填好了，
+          // 其实解析不出来，还会被存进磁盘。空的时候直接忽略。
+          if (s.isEmpty) break;
           s = s.startsWith('-') ? s.substring(1) : '-$s';
         case KeyKind.clear:
           s = '';
@@ -115,13 +169,20 @@ class _MortarScreenState extends State<MortarScreen> {
           break;
       }
       _text[f] = s;
+      _freshFocus = false;
       if (s != before) dropped = _dropStaleOffset();
     });
 
     if (dropped) _toast('坐标变了，弹着点矫正已清零');
 
     if (f == Field.gunX || f == Field.gunY) {
-      Store.saveLastGun(_text[Field.gunX]!, _text[Field.gunY]!);
+      // 只存解析得出的值。"-" 或 "0." 这类中间态存进去，
+      // 下次启动会预填一个用不了的炮位。
+      final gx = _text[Field.gunX]!;
+      final gy = _text[Field.gunY]!;
+      final okX = gx.isEmpty || double.tryParse(gx) != null;
+      final okY = gy.isEmpty || double.tryParse(gy) != null;
+      if (okX && okY) Store.saveLastGun(gx, gy);
     }
   }
 
@@ -204,8 +265,8 @@ class _MortarScreenState extends State<MortarScreen> {
       gunY: _val(Field.gunY)!,
       tgtX: _val(Field.tgtX)!,
       tgtY: _val(Field.tgtY)!,
-      offX: _offsetX,
-      offY: _offsetY,
+      offX: _offsetIsSet ? _offsetX : 0,
+      offY: _offsetIsSet ? _offsetY : 0,
       rangeM: s.rangeRounded,
       bearing: s.bearingLabel,
       savedAt: DateTime.now().millisecondsSinceEpoch,
@@ -289,8 +350,9 @@ class _MortarScreenState extends State<MortarScreen> {
                     yField: Field.gunY,
                     text: _text,
                     focus: _focus,
-                    onFocus: (f) => setState(() => _focus = f),
+                    onFocus: _focusField,
                     onRemember: () => _remember(true),
+                    fieldKeys: _fieldKeys,
                   ),
                   const SizedBox(height: 10),
                   _CoordGroup(
@@ -299,16 +361,17 @@ class _MortarScreenState extends State<MortarScreen> {
                     yField: Field.tgtY,
                     text: _text,
                     focus: _focus,
-                    onFocus: (f) => setState(() => _focus = f),
+                    onFocus: _focusField,
                     onRemember: () => _remember(false),
+                    fieldKeys: _fieldKeys,
                   ),
                   const SizedBox(height: 16),
                   _CorrectionSection(
                     step: _step,
                     onStep: _setStep,
                     onNudge: _nudge,
-                    offsetX: _offsetX,
-                    offsetY: _offsetY,
+                    offsetX: _offsetIsSet ? _offsetX : 0,
+                    offsetY: _offsetIsSet ? _offsetY : 0,
                     onReset: () => setState(() {
                       _offsetX = 0;
                       _offsetY = 0;
@@ -456,6 +519,7 @@ class _CoordGroup extends StatelessWidget {
   final Field? focus;
   final ValueChanged<Field> onFocus;
   final VoidCallback onRemember;
+  final Map<Field, GlobalKey> fieldKeys;
 
   const _CoordGroup({
     required this.title,
@@ -465,6 +529,7 @@ class _CoordGroup extends StatelessWidget {
     required this.focus,
     required this.onFocus,
     required this.onRemember,
+    required this.fieldKeys,
   });
 
   @override
@@ -498,6 +563,7 @@ class _CoordGroup extends StatelessWidget {
           children: [
             Expanded(
               child: _CoordField(
+                key: fieldKeys[xField],
                 axis: 'X',
                 value: text[xField]!,
                 active: focus == xField,
@@ -507,6 +573,7 @@ class _CoordGroup extends StatelessWidget {
             const SizedBox(width: 11),
             Expanded(
               child: _CoordField(
+                key: fieldKeys[yField],
                 axis: 'Y',
                 value: text[yField]!,
                 active: focus == yField,
@@ -527,6 +594,7 @@ class _CoordField extends StatelessWidget {
   final VoidCallback onTap;
 
   const _CoordField({
+    super.key,
     required this.axis,
     required this.value,
     required this.active,
@@ -608,18 +676,19 @@ class _CorrectionSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 9),
-        Row(
+        // 用 Wrap 不用 Row：6 个按钮在 320 宽的屏上排不下，
+        // Row 会直接横向溢出 29px。窄屏上让它换行，别挤没了。
+        Wrap(
+          spacing: 9,
+          runSpacing: 9,
           children: [
-            for (final p in presets) ...[
+            for (final p in presets)
               _Chip(
                 label: '$p',
                 selected: p == step,
                 onTap: () => onStep(p),
               ),
-              const SizedBox(width: 9),
-            ],
             _Chip(label: '−', onTap: () => onStep(step - 5)),
-            const SizedBox(width: 9),
             _Chip(label: '+', onTap: () => onStep(step + 5)),
           ],
         ),
@@ -776,8 +845,10 @@ class _SavedList extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(10),
-                  onTap: () => onRecall(c, false),
-                  onLongPress: () => onRecall(c, true),
+                  // 卡片上写着「炮位」就填进炮位，写着「目标」就填进目标。
+                  // 原先是点=目标、长按=炮位，而界面上没有一个字说明，
+                  // 于是点一张写着「炮位」的卡片，数字会落进敌人格子。
+                  onTap: () => onRecall(c, c.label == '炮位'),
                   child: Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

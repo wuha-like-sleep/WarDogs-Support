@@ -139,7 +139,9 @@ class _MoreScreenState extends State<MoreScreen> {
                 Text(
                   '本工具由玩家自发制作，免费提供，不用于任何商业用途。\n'
                   '与 BULKHEAD、Team17 无关，未获其授权或认可。\n'
-                  'WARDOGS 及相关名称、商标归其权利人所有。',
+                  'WARDOGS 及相关名称、商标归其权利人所有。\n'
+                  '数据来自公开社区攻略，以游戏内实际数值为准。\n'
+                  '如权利人认为有不妥之处，请联系删除。',
                   style: TextStyle(color: C.textDim, fontSize: 14, height: 1.7),
                 ),
               ],

@@ -48,12 +48,27 @@ void main() {
     ));
     await t.pumpAndSettle();
 
-    final err = t.takeException();
-    expect(
-      err,
-      isNull,
-      reason: '$screenName 在 $size / 字号 ${scale}x 下渲染出错：$err',
-    );
+    void assertClean(String where) {
+      final err = t.takeException();
+      expect(
+        err,
+        isNull,
+        reason: '$screenName 在 $size / 字号 ${scale}x 的$where渲染出错：$err',
+      );
+    }
+
+    assertClean('首屏');
+
+    // 溢出是在 paint() 里报的，而 ListView 只绘制可见范围 ——
+    // 不滚动的话，折叠线以下的布局塌方永远不会被发现。
+    final scrollable = find.byType(Scrollable);
+    if (scrollable.evaluate().isNotEmpty) {
+      for (var i = 1; i <= 8; i++) {
+        await t.drag(scrollable.first, Offset(0, -size.height * 0.7));
+        await t.pumpAndSettle();
+        assertClean('第 $i 屏');
+      }
+    }
   }
 
   for (final entry in _sizes.entries) {

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 /// 当前版本，发版时改这里（要和 pubspec.yaml 的 version 一致）
-const String kAppVersion = '1.0.0';
+const String kAppVersion = '1.0.1';
 
 /// 发版仓库。更新走 GitHub Releases —— 这是整个 App 唯一会联网的地方。
 /// 换仓库只改这两行。
@@ -46,15 +46,22 @@ class NotConfigured extends UpdateResult {
   const NotConfigured();
 }
 
-/// 比版本号。1.2.0 > 1.10.0 这种坑要靠逐段比数字，不能比字符串。
-int compareVersions(String a, String b) {
-  List<int> parts(String v) => v
-      .replaceAll(RegExp(r'^[vV]'), '')
-      .split(RegExp(r'[.+-]'))
-      .map((s) => int.tryParse(s) ?? 0)
-      .toList();
+/// 从 tag 里挖出版本号。tag 可能叫 v1.2.0、release-1.2.0、Version 1.2.0，
+/// 只剥 ^v 的话 "release" 会被当成第 0 段，整个比较静默失真。
+List<int>? parseVersion(String v) {
+  final m = RegExp(r'(\d+(?:\.\d+)*)').firstMatch(v);
+  if (m == null) return null;
+  return m.group(1)!.split('.').map(int.parse).toList();
+}
 
-  final pa = parts(a), pb = parts(b);
+/// 比版本号。1.2.0 > 1.10.0 这种坑要靠逐段比数字，不能比字符串。
+/// 任一边解析不出版本号时返回 -1（当作「不比当前新」），
+/// 宁可不提示更新，也不要因为 tag 起错名就把用户推去下载。
+int compareVersions(String a, String b) {
+  final pa = parseVersion(a);
+  final pb = parseVersion(b);
+  if (pa == null || pb == null) return -1;
+
   final n = pa.length > pb.length ? pa.length : pb.length;
   for (var i = 0; i < n; i++) {
     final x = i < pa.length ? pa[i] : 0;

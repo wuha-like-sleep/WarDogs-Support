@@ -92,6 +92,11 @@ class Store {
   static const _kStep = 'nudge_step_v1';
   static const _kGunX = 'last_gun_x';
   static const _kGunY = 'last_gun_y';
+  static const _kGunAt = 'last_gun_at';
+
+  /// 炮位记忆的保鲜期。超过这个时间多半已经换局换图了，
+  /// 再预填就是在让玩家拿着上一局的炮位算诸元，而焦点还会自动跳过它。
+  static const gunMemoryTtl = Duration(hours: 12);
 
   static Future<List<SavedCoord>> loadCoords() async {
     final sp = await SharedPreferences.getInstance();
@@ -150,14 +155,21 @@ class Store {
   }
 
   /// 炮位通常一局之内不动，所以单独记住，下次打开直接用
-  static Future<(String, String)> loadLastGun() async {
+  static Future<(String, String)> loadLastGun({DateTime? now}) async {
     final sp = await SharedPreferences.getInstance();
+    final at = sp.getInt(_kGunAt);
+    if (at == null) return ('', '');
+    final age = (now ?? DateTime.now())
+        .difference(DateTime.fromMillisecondsSinceEpoch(at));
+    if (age > gunMemoryTtl || age.isNegative) return ('', '');
     return (sp.getString(_kGunX) ?? '', sp.getString(_kGunY) ?? '');
   }
 
-  static Future<void> saveLastGun(String x, String y) async {
+  static Future<void> saveLastGun(String x, String y, {DateTime? now}) async {
     final sp = await SharedPreferences.getInstance();
     await sp.setString(_kGunX, x);
     await sp.setString(_kGunY, y);
+    await sp.setInt(
+        _kGunAt, (now ?? DateTime.now()).millisecondsSinceEpoch);
   }
 }

@@ -13,6 +13,12 @@ void main() {
     statusBarIconBrightness: Brightness.light,
     statusBarBrightness: Brightness.dark,
   ));
+  // 只支持竖屏。横屏下键盘一弹，诸元卡片整块看不见，
+  // 而这个 App 的全部价值就是让你看见那两个数字。
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(const WarDogsApp());
 }
 
