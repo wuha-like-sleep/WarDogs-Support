@@ -101,12 +101,55 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                     child: Text('没有匹配的枪',
                         style: TextStyle(color: C.textFaint, fontSize: 15)),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
-                    itemCount: list.length,
-                    itemBuilder: (_, i) => _WeaponTile(list[i]),
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+                    children: [
+                      for (final cat in kWeaponCategories)
+                        if (list.any((w) => w.category == cat)) ...[
+                          _CatHeader(
+                            cat,
+                            count: list.where((w) => w.category == cat).length,
+                          ),
+                          for (final w in list.where((w) => w.category == cat))
+                            _WeaponTile(w),
+                        ],
+                    ],
                   ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 分类标题：金色竖条 + 数量，让长列表有节奏
+class _CatHeader extends StatelessWidget {
+  final String title;
+  final int count;
+
+  const _CatHeader(this.title, {required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14, bottom: 9),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 16,
+            decoration: BoxDecoration(
+              color: C.gold,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Text(title,
+              style: const TextStyle(
+                  color: C.gold, fontSize: 15, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 8),
+          Text('$count',
+              style: const TextStyle(color: C.textFaint, fontSize: 13)),
         ],
       ),
     );
@@ -194,23 +237,29 @@ class _WeaponTile extends StatelessWidget {
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 3),
                       Text(
-                        [w.category, if (w.track != null) w.track!].join(' · '),
+                        w.track ?? w.category,
                         style: const TextStyle(color: C.textDim, fontSize: 14),
                       ),
                     ],
                   ),
                 ),
-                if (w.hasDetail)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: C.goldFaint,
-                      borderRadius: BorderRadius.circular(5),
+                if (w.headshotFmj != null) ...[
+                  Text(
+                    w.headshotFmj!.toStringAsFixed(0),
+                    style: const TextStyle(
+                      color: C.gold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
-                    child: const Text('有数据',
-                        style: TextStyle(color: C.gold, fontSize: 12)),
                   ),
+                  const SizedBox(width: 4),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text('爆头',
+                        style: TextStyle(color: C.textFaint, fontSize: 12)),
+                  ),
+                ],
                 const SizedBox(width: 6),
                 const Icon(Icons.chevron_right, color: C.textFaint, size: 20),
               ],
@@ -278,11 +327,7 @@ class _WeaponSheet extends StatelessWidget {
             const SizedBox(height: 8),
             for (final e in w.attachments.entries) _Row(e.key, e.value),
           ],
-          if (!w.hasDetail) ...[
-            const SizedBox(height: 10),
-            const Text('暂无详细数据',
-                style: TextStyle(color: C.textFaint, fontSize: 15)),
-          ],
+
         ],
       ),
     );

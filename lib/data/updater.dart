@@ -82,16 +82,16 @@ Future<UpdateResult> checkForUpdate({
     final res = await req.close().timeout(timeout);
 
     if (res.statusCode == 404) {
-      return const UpdateFailed('仓库里还没有发布过版本');
+      return const UpdateFailed('暂时没有新版本');
     }
     if (res.statusCode != 200) {
-      return UpdateFailed('检查失败（${res.statusCode}）');
+      return const UpdateFailed('暂时连不上，待会儿再试');
     }
 
     final body = await res.transform(utf8.decoder).join().timeout(timeout);
     final json = jsonDecode(body) as Map<String, dynamic>;
     final tag = (json['tag_name'] as String?)?.trim() ?? '';
-    if (tag.isEmpty) return const UpdateFailed('没读到版本号');
+    if (tag.isEmpty) return const UpdateFailed('暂时没有新版本');
 
     if (compareVersions(tag, kAppVersion) <= 0) return const UpToDate();
 

@@ -80,15 +80,13 @@ class _CompareScreenState extends State<CompareScreen> {
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
-                  child: Text('金色 = 爆头一枪带走（伤害 ≥ 100）',
+                  child: Text('金色 = 爆头一枪带走',
                       style: TextStyle(color: C.textDim, fontSize: 14)),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          const Text('只列出已有数值的枪，数据会陆续补齐。',
-              style: TextStyle(color: C.textFaint, fontSize: 14)),
+
         ],
       ),
     );

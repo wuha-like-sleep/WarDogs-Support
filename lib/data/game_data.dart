@@ -31,6 +31,15 @@ class Weapon {
   });
 
   bool get hasDetail => damage.isNotEmpty || caliber != null;
+
+  /// 列表行上直接显示的数字：FMJ 打无甲的爆头伤害。
+  /// 玩家扫一眼就知道这枪够不够狠，比「有没有数据」有用得多。
+  double? get headshotFmj {
+    for (final r in damage) {
+      if (r.ammo == 'FMJ') return r.noArmor;
+    }
+    return null;
+  }
 }
 
 /// 一种弹药对各护甲等级的**爆头**伤害（wiki 原文：以爆头伤害计算）

@@ -23,7 +23,7 @@ class _MoreScreenState extends State<MoreScreen> {
       case UpToDate():
         _snack('已经是最新版本');
       case NotConfigured():
-        _snack('还没配发版仓库');
+        _snack('暂时无法检查更新');
       case UpdateFailed(:final reason):
         _snack(reason);
       case UpdateAvailable(:final info):
