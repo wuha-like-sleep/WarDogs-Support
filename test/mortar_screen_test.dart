@@ -110,4 +110,41 @@ void main() {
     expect(find.text('475'), findsOneWidget);
     expect(find.textContaining('已矫正'), findsOneWidget);
   });
+
+  testWidgets('换目标后，上一个目标的矫正量不能残留', (t) async {
+    // 视口调高，让整页一次装下 —— 否则滚动会把输入框从树里回收掉
+    t.view.physicalSize = const Size(1200, 4200);
+    t.view.devicePixelRatio = 3.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+
+    await pumpScreen(t);
+
+    // 炮位 (0,0)，目标 (0,5) → 500 米
+    await typeNumber(t, '0');
+    await press(t, '下一项');
+    await typeNumber(t, '0');
+    await press(t, '下一项');
+    await typeNumber(t, '0');
+    await press(t, '下一项');
+    await typeNumber(t, '5');
+    await t.pump();
+    expect(find.text('500'), findsOneWidget);
+
+    // 试射后往南修正 25 米 → 475
+    await scrollAndPress(t, '下');
+    expect(find.text('475'), findsOneWidget);
+    expect(find.textContaining('已矫正'), findsOneWidget);
+
+    // 换目标：把 Y 从 5 改成 6。焦点还在 tgtY 上，直接退格重输。
+    await press(t, '⌫');
+    await typeNumber(t, '6');
+    await t.pump();
+
+    // 新目标应该是干干净净的 600，而不是带着上一发 25 米修正的 575
+    expect(find.text('600'), findsOneWidget,
+        reason: '换目标后诸元必须重新从坐标算，不能带上一个目标的矫正量');
+    expect(find.text('575'), findsNothing);
+    expect(find.textContaining('已矫正'), findsNothing);
+  });
 }

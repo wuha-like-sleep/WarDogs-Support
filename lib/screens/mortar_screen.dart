@@ -68,6 +68,17 @@ class _MortarScreenState extends State<MortarScreen> {
     );
   }
 
+  /// 矫正量是针对「当前这组炮位 + 目标」试出来的。
+  /// 任何一个坐标变了，这组矫正就不再成立 —— 留着它会让新目标的诸元
+  /// 静默偏掉，界面还一切正常。这是这个 App 最致命的一类错误。
+  /// 必须在 setState 里调用；返回是否真的清掉了东西。
+  bool _dropStaleOffset() {
+    if (_offsetX == 0 && _offsetY == 0) return false;
+    _offsetX = 0;
+    _offsetY = 0;
+    return true;
+  }
+
   void _onKey(KeypadKey k) {
     HapticFeedback.selectionClick();
     final f = _focus;
@@ -85,7 +96,9 @@ class _MortarScreenState extends State<MortarScreen> {
     }
     if (f == null) return;
 
+    var dropped = false;
     setState(() {
+      final before = _text[f]!;
       var s = _text[f]!;
       switch (k.kind) {
         case KeyKind.digit:
@@ -102,7 +115,10 @@ class _MortarScreenState extends State<MortarScreen> {
           break;
       }
       _text[f] = s;
+      if (s != before) dropped = _dropStaleOffset();
     });
+
+    if (dropped) _toast('坐标变了，弹着点矫正已清零');
 
     if (f == Field.gunX || f == Field.gunY) {
       Store.saveLastGun(_text[Field.gunX]!, _text[Field.gunY]!);
@@ -152,10 +168,13 @@ class _MortarScreenState extends State<MortarScreen> {
   }
 
   void _recall(SavedCoord c, bool intoGun) {
+    var dropped = false;
     setState(() {
       _text[intoGun ? Field.gunX : Field.tgtX] = c.x.toStringAsFixed(2);
       _text[intoGun ? Field.gunY : Field.tgtY] = c.y.toStringAsFixed(2);
+      dropped = _dropStaleOffset();
     });
+    if (dropped) _toast('坐标变了，弹着点矫正已清零');
     if (intoGun) Store.saveLastGun(_text[Field.gunX]!, _text[Field.gunY]!);
   }
 
