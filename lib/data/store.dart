@@ -74,7 +74,17 @@ class ShotRecord {
 
   String get gunText => '${gunX.toStringAsFixed(2)}, ${gunY.toStringAsFixed(2)}';
   String get tgtText => '${tgtX.toStringAsFixed(2)}, ${tgtY.toStringAsFixed(2)}';
-  bool get hasOffset => offX != 0 || offY != 0;
+  bool get hasOffset => offX.abs() > 1e-9 || offY.abs() > 1e-9;
+
+  /// 形如「矫正 北75 东-25」。只写非零的那一项，两项都有就都写。
+  String get offsetLabel {
+    final parts = <String>[];
+    final n = (offY * 100).round();
+    final e = (offX * 100).round();
+    if (n != 0) parts.add('${n > 0 ? "北" : "南"}${n.abs()}');
+    if (e != 0) parts.add('${e > 0 ? "东" : "西"}${e.abs()}');
+    return parts.isEmpty ? '已矫正' : '矫正 ${parts.join(" ")}';
+  }
 
   /// 同一发不重复记（坐标和矫正都一样就算同一发）
   bool sameAs(ShotRecord o) =>

@@ -180,8 +180,11 @@ class _ShotTile extends StatelessWidget {
                             color: C.goldFaint,
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text('已矫正',
-                              style: TextStyle(color: C.gold, fontSize: 12)),
+                          // 带上量，否则卡片上「目标坐标」和「距离」对不上，
+                          // 玩家照坐标手算会得出另一个数，没法复核
+                          child: Text(shot.offsetLabel,
+                              style: const TextStyle(
+                                  color: C.gold, fontSize: 12)),
                         ),
                       ),
                   ],
