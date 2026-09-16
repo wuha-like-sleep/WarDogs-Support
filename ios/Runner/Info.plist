@@ -6,6 +6,9 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- 没有使用非豁免加密，声明掉，免得每次上传都被追问 -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleDisplayName</key>
 	<string>战狗小助手</string>
 	<key>CFBundleExecutable</key>
