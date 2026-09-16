@@ -4,6 +4,11 @@ import 'dart:math' as math;
 /// 炮位(63.41,104.52) 敌人(67.56,100.67) → 5.6608 格 → 566 米）
 const double kGridMeters = 100.0;
 
+/// L81 迫击炮的有效射程（米）。社区实测口径，官方没公布过。
+/// 超出这个范围的诸元算得出来也打不到，必须让人一眼看见。
+const int kL81MinRange = 132;
+const int kL81MaxRange = 684;
+
 /// 八方位罗盘，用于把角度标成 SE / NW 这种后缀
 const List<String> _sectors = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
@@ -37,6 +42,17 @@ class FireSolution {
 
   /// 形如 "133SE"
   String get bearingLabel => '$bearingRounded$compass';
+
+  /// 这一发 L81 打不打得到
+  bool get inL81Range =>
+      rangeRounded >= kL81MinRange && rangeRounded <= kL81MaxRange;
+
+  /// 超出射程时给一句人话，射程内返回 null
+  String? get rangeWarning {
+    if (inL81Range) return null;
+    if (rangeRounded < kL81MinRange) return '太近，L81 最少 $kL81MinRange 米';
+    return '超出射程，L81 最远 $kL81MaxRange 米';
+  }
 
   /// 可以直接粘给队友的一行诸元
   String get shareText => '距离 $rangeRounded 米 · 方向 $bearingLabel';

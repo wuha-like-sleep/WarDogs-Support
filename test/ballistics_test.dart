@@ -62,4 +62,27 @@ void main() {
       expect(after.rangeMeters, lessThan(before.rangeMeters));
     });
   });
+
+  group('射程判断', () {
+    FireSolution at(double grids) =>
+        solve(gunX: 0, gunY: 0, targetX: 0, targetY: grids);
+
+    test('射程内不提示', () {
+      expect(at(1.32).rangeWarning, isNull);
+      expect(at(5.0).rangeWarning, isNull);
+      expect(at(6.84).rangeWarning, isNull);
+    });
+
+    test('太近要提示', () {
+      expect(at(1.0).rangeWarning, contains('太近'));
+      expect(at(0.5).inL81Range, isFalse);
+    });
+
+    test('太远要提示 —— 这正是「5258 米」那次该被拦下的地方', () {
+      final s = solve(gunX: 100.54, gunY: 59.02, targetX: 62.96, targetY: 95.79);
+      expect(s.rangeRounded, 5258);
+      expect(s.inL81Range, isFalse);
+      expect(s.rangeWarning, contains('超出射程'));
+    });
+  });
 }

@@ -436,6 +436,21 @@ class _SolutionCard extends StatelessWidget {
               ),
             ],
           ),
+          if (s?.rangeWarning != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.error_outline, size: 17, color: C.gold),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    s!.rangeWarning!,
+                    style: const TextStyle(color: C.gold, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerRight,
