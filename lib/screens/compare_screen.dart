@@ -17,19 +17,14 @@ class _CompareScreenState extends State<CompareScreen> {
   static const _ammoNames = ['FMJ', 'HP', 'AP'];
   static const _tierNames = ['无甲', '1级', '2级', '3级', '4级'];
 
-  double _damageOf(Weapon w) {
-    final row = w.damage.firstWhere(
-      (r) => r.ammo == _ammoNames[_ammo],
-      orElse: () => const AmmoRow('', 0, 0, 0, 0, 0),
-    );
-    return switch (_tier) {
-      0 => row.noArmor,
-      1 => row.t1,
-      2 => row.t2,
-      3 => row.t3,
-      _ => row.t4,
-    };
-  }
+  AmmoRow _rowOf(Weapon w) => w.damage.firstWhere(
+        (r) => r.ammo == _ammoNames[_ammo],
+        orElse: () => const AmmoRow('', 0, 0, 0, 0, 0),
+      );
+
+  double _damageOf(Weapon w) => _rowOf(w).at(_tier);
+
+  bool _isDoubtful(Weapon w) => _rowOf(w).isDoubtful(_tier);
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +40,7 @@ class _CompareScreenState extends State<CompareScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              '已收录数值的 ${ranked.length} 把枪（游戏共 ${kWeapons.length} 把）',
+              '${kWeapons.length} 把枪里，有 ${ranked.length} 把收录了数值',
               style: const TextStyle(color: C.textDim, fontSize: 14),
             ),
           ),
@@ -71,6 +66,7 @@ class _CompareScreenState extends State<CompareScreen> {
               // 别改回按固定血量判「一枪带走」：玩家血量多少没有任何公开出处，
               // 猜错会让人拿着打不死人的枪去拼。
               best: ranked.isNotEmpty && w.name == ranked.first.name,
+              doubtful: _isDoubtful(w),
             ),
           const SizedBox(height: 16),
           Container(
@@ -95,6 +91,11 @@ class _CompareScreenState extends State<CompareScreen> {
               ],
             ),
           ),
+          if (ranked.any(_isDoubtful)) ...[
+            const SizedBox(height: 10),
+            const Text('带 ? 的数字存疑，以游戏内实际为准',
+                style: TextStyle(color: C.textDim, fontSize: 14)),
+          ],
 
         ],
       ),
@@ -160,6 +161,7 @@ class _Bar extends StatelessWidget {
   final double value;
   final double ratio;
   final bool best;
+  final bool doubtful;
 
   const _Bar({
     required this.name,
@@ -167,6 +169,7 @@ class _Bar extends StatelessWidget {
     required this.value,
     required this.ratio,
     required this.best,
+    required this.doubtful,
   });
 
   @override
@@ -198,6 +201,15 @@ class _Bar extends StatelessWidget {
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
+              if (doubtful)
+                const Padding(
+                  padding: EdgeInsets.only(left: 3),
+                  child: Text('?',
+                      style: TextStyle(
+                          color: C.gold,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700)),
+                ),
             ],
           ),
           const SizedBox(height: 7),

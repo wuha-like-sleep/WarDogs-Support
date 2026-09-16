@@ -47,7 +47,29 @@ class AmmoRow {
   final String ammo;
   final double noArmor, t1, t2, t3, t4;
 
-  const AmmoRow(this.ammo, this.noArmor, this.t1, this.t2, this.t3, this.t4);
+  /// 哪几格的数值存疑（0=无甲，1..4=各级护甲）。
+  /// 照抄数据源、不擅自改，但要让玩家看得见疑点在哪。
+  final Set<int> doubtful;
+
+  const AmmoRow(
+    this.ammo,
+    this.noArmor,
+    this.t1,
+    this.t2,
+    this.t3,
+    this.t4, {
+    this.doubtful = const {},
+  });
+
+  double at(int tier) => switch (tier) {
+        0 => noArmor,
+        1 => t1,
+        2 => t2,
+        3 => t3,
+        _ => t4,
+      };
+
+  bool isDoubtful(int tier) => doubtful.contains(tier);
 }
 
 const kAmmoNotes = <String, String>{
@@ -79,7 +101,11 @@ const kWeapons = <Weapon>[
     track: '突击兵',
     unlock: '突击兵 3 级，另需 \$10000',
     damage: [
-      AmmoRow('FMJ', 61.12, 72.79, 36.67, 27.51, 21.40),
+      // 72.79 比无甲的 61.12 还高，是全表唯一「穿了甲反而更疼」的一格。
+      // 另外三把有数据的枪，护甲衰减严格是 0.70/0.60/0.45/0.35，
+      // AK74 的 2/3/4 级也精确吻合，只有这一格是 1.191。
+      // 大概率是资料源录错，但没有实测依据，所以照原值保留并标存疑。
+      AmmoRow('FMJ', 61.12, 72.79, 36.67, 27.51, 21.40, doubtful: {1}),
       AmmoRow('HP', 122.21, 12.12, 8.81, 3.87, 0.56),
       AmmoRow('AP', 48.90, 40.10, 37.17, 32.76, 29.83),
     ],

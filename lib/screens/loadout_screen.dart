@@ -318,6 +318,14 @@ class _WeaponSheet extends StatelessWidget {
                     color: C.text, fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
             _DamageTable(w.damage),
+            if (w.damage.any((r) => r.doubtful.isNotEmpty)) ...[
+              const SizedBox(height: 10),
+              const Text(
+                '带 ? 的数字存疑：穿甲后伤害反而更高，和其他枪的规律相反。'
+                '资料原值照录，以游戏内实际为准。',
+                style: TextStyle(color: C.textDim, fontSize: 14, height: 1.5),
+              ),
+            ],
           ],
           if (w.attachments.isNotEmpty) ...[
             const SizedBox(height: 22),
@@ -411,16 +419,31 @@ class _DamageTable extends StatelessWidget {
                             fontSize: 13,
                             fontWeight: FontWeight.w600)),
                   ),
-                  for (final v in [r.noArmor, r.t1, r.t2, r.t3, r.t4])
+                  for (int tier = 0; tier < 5; tier++)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 7),
-                      child: Text(
-                        v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2),
-                        style: const TextStyle(
-                          color: C.text,
-                          fontSize: 13,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            r.at(tier).toStringAsFixed(
+                                r.at(tier) == r.at(tier).roundToDouble() ? 0 : 2),
+                            style: const TextStyle(
+                              color: C.text,
+                              fontSize: 13,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                          if (r.isDoubtful(tier))
+                            const Padding(
+                              padding: EdgeInsets.only(left: 3),
+                              child: Text('?',
+                                  style: TextStyle(
+                                      color: C.gold,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                        ],
                       ),
                     ),
                 ],
