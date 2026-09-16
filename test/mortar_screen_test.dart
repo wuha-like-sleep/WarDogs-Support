@@ -42,18 +42,18 @@ void main() {
     // 一开始四个格子都空，诸元位置显示横杠而不是乱数
     expect(find.text('—'), findsNWidgets(2));
 
-    await typeNumber(t, '63.41');
+    await typeNumber(t, '100.54');
     await press(t, '下一项');
-    await typeNumber(t, '104.52');
+    await typeNumber(t, '59.02');
     await press(t, '下一项');
-    await typeNumber(t, '67.56');
+    await typeNumber(t, '62.96');
     await press(t, '下一项');
-    await typeNumber(t, '100.67');
+    await typeNumber(t, '95.79');
     await t.pump();
 
-    // 这组数就是实机截图里的那一发
-    expect(find.text('566'), findsOneWidget);
-    expect(find.text('133SE'), findsOneWidget);
+    // 实机验证过的一炮。按旧刻度（100 米）会算成 5258 米
+    expect(find.text('526'), findsOneWidget);
+    expect(find.text('314NW'), findsOneWidget);
   });
 
   testWidgets('少填一个格子就不出诸元', (t) async {
@@ -98,7 +98,7 @@ void main() {
     await press(t, '下一项');
     await typeNumber(t, '0');
     await press(t, '下一项');
-    await typeNumber(t, '5');
+    await typeNumber(t, '50');
     await t.pump();
     expect(find.text('500'), findsOneWidget);
 
@@ -127,7 +127,7 @@ void main() {
     await press(t, '下一项');
     await typeNumber(t, '0');
     await press(t, '下一项');
-    await typeNumber(t, '5');
+    await typeNumber(t, '50');
     await t.pump();
     expect(find.text('500'), findsOneWidget);
 
@@ -136,9 +136,9 @@ void main() {
     expect(find.text('475'), findsOneWidget);
     expect(find.textContaining('已矫正'), findsOneWidget);
 
-    // 换目标：把 Y 从 5 改成 6。焦点还在 tgtY 上，直接退格重输。
-    await press(t, '⌫');
-    await typeNumber(t, '6');
+    // 换目标：清空重输 60。焦点还在 tgtY 上。
+    await press(t, 'C');
+    await typeNumber(t, '60');
     await t.pump();
 
     // 新目标应该是干干净净的 600，而不是带着上一发 25 米修正的 575
@@ -178,7 +178,7 @@ void main() {
     expect(find.text('12345678'), findsOneWidget);
   });
 
-  testWidgets('非 2 的幂步长来回矫正后，「已矫正」要能消掉', (t) async {
+  testWidgets('矫正后点清零，提示要消掉', (t) async {
     t.view.physicalSize = const Size(1200, 4200);
     t.view.devicePixelRatio = 3.0;
     addTearDown(t.view.resetPhysicalSize);
@@ -191,20 +191,16 @@ void main() {
     await press(t, '下一项');
     await typeNumber(t, '0');
     await press(t, '下一项');
-    await typeNumber(t, '5');
+    await typeNumber(t, '50');
     await t.pump();
 
-    // 步长换成 10 米（0.1 格，二进制除不尽）
     await scrollAndPress(t, '10');
-    // 上三下三，数学上回到原点
     for (var i = 0; i < 3; i++) {
       await scrollAndPress(t, '上');
     }
-    for (var i = 0; i < 3; i++) {
-      await scrollAndPress(t, '下');
-    }
+    expect(find.textContaining('已矫正'), findsOneWidget);
 
-    // 浮点残渣 2.8e-17 不能让这行自相矛盾的提示留在屏幕上
+    await scrollAndPress(t, '清零');
     expect(find.textContaining('已矫正'), findsNothing);
     expect(find.text('500'), findsOneWidget);
   });

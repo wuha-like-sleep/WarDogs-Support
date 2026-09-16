@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 /// 当前版本，发版时改这里（要和 pubspec.yaml 的 version 一致）
-const String kAppVersion = '1.0.3';
+const String kAppVersion = '1.0.4';
 
 /// 发版仓库。更新走 GitHub Releases —— 这是整个 App 唯一会联网的地方。
 /// 换仓库只改这两行。
