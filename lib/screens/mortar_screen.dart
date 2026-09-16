@@ -4,6 +4,7 @@ import '../ballistics.dart';
 import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/keypad.dart';
+import '../widgets/page_body.dart';
 import 'history_screen.dart';
 
 /// 四个输入框的顺序，「下一项」按这个顺序走
@@ -336,7 +337,8 @@ class _MortarScreenState extends State<MortarScreen> {
       body: Column(
         children: [
           Expanded(
-            child: GestureDetector(
+            child: PageBody(
+              child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => setState(() => _focus = null),
               child: ListView(
@@ -383,11 +385,12 @@ class _MortarScreenState extends State<MortarScreen> {
                     onRecall: _recall,
                     onDelete: _deleteSaved,
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-          if (_focus != null) Keypad(onKey: _onKey),
+          if (_focus != null) PageBody(child: Keypad(onKey: _onKey)),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../theme.dart';
+import '../widgets/page_body.dart';
 
 /// 伤害对比：选弹药 + 选护甲等级，直接看哪把枪打得动。
 class CompareScreen extends StatefulWidget {
@@ -34,7 +35,8 @@ class _CompareScreenState extends State<CompareScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('伤害对比')),
-      body: ListView(
+      body: PageBody(
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
         children: [
           Padding(
@@ -98,6 +100,7 @@ class _CompareScreenState extends State<CompareScreen> {
           ],
 
         ],
+      ),
       ),
     );
   }

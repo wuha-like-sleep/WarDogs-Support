@@ -5,7 +5,12 @@ import 'dart:io';
 /// 当前版本，发版时改这里（要和 pubspec.yaml 的 version 一致）
 const String kAppVersion = '1.0.4';
 
-/// 发版仓库。更新走 GitHub Releases —— 这是整个 App 唯一会联网的地方。
+/// App Store 的应用编号。iOS 走商店更新，不走 GitHub。
+const String kAppStoreId = '6812643556';
+
+String get kAppStoreUrl => 'https://apps.apple.com/app/id$kAppStoreId';
+
+/// 发版仓库。安卓走 GitHub Releases 自建渠道 —— 这是整个 App 唯一会联网的地方。
 /// 换仓库只改这两行。
 const String kRepoOwner = 'wuha-like-sleep';
 const String kRepoName = 'WarDogs-Support';

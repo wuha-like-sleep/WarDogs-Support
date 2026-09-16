@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/store.dart';
 import '../theme.dart';
+import '../widgets/page_body.dart';
 
 /// 射击记录。反复试炮位的时候靠它回看和还原。
 class HistoryScreen extends StatefulWidget {
@@ -63,7 +64,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
         ],
       ),
-      body: _shots.isEmpty
+      body: PageBody(
+        child: _shots.isEmpty
           ? const Center(
               child: Text('还没有记录\n复制诸元时会自动记一发',
                   textAlign: TextAlign.center,
@@ -78,6 +80,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 onDelete: () => _delete(_shots[i]),
               ),
             ),
+      ),
     );
   }
 }

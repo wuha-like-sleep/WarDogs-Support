@@ -1,7 +1,10 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/updater.dart';
 import '../theme.dart';
+import '../widgets/page_body.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -12,6 +15,13 @@ class MoreScreen extends StatefulWidget {
 
 class _MoreScreenState extends State<MoreScreen> {
   bool _checking = false;
+
+  Future<void> _openStore() async {
+    final uri = Uri.parse(kAppStoreUrl);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) _snack('打不开 App Store');
+    }
+  }
 
   Future<void> _check() async {
     setState(() => _checking = true);
@@ -80,7 +90,8 @@ class _MoreScreenState extends State<MoreScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('更多')),
-      body: ListView(
+      body: PageBody(
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
         children: [
           _Card(
@@ -101,14 +112,17 @@ class _MoreScreenState extends State<MoreScreen> {
           const SizedBox(height: 12),
           _Card(
             child: InkWell(
-              onTap: _checking ? null : _check,
+              // iOS 的更新由 App Store 负责。去 GitHub 查版本对 iPhone 用户
+              // 毫无意义 —— 那边挂的是安卓 APK，点进去拿到一个装不了的文件。
+              onTap: _checking ? null : (Platform.isIOS ? _openStore : _check),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
                   children: [
-                    const Expanded(
-                      child: Text('检查更新',
-                          style: TextStyle(color: C.text, fontSize: 16)),
+                    Expanded(
+                      child: Text(
+                          Platform.isIOS ? '在 App Store 中查看' : '检查更新',
+                          style: const TextStyle(color: C.text, fontSize: 16)),
                     ),
                     if (_checking)
                       const SizedBox(
@@ -161,6 +175,7 @@ class _MoreScreenState extends State<MoreScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
