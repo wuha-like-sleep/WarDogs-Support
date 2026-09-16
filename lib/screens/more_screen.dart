@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../data/settings.dart';
 import '../data/updater.dart';
 import '../theme.dart';
 import '../widgets/page_body.dart';
@@ -111,6 +112,39 @@ class _MoreScreenState extends State<MoreScreen> {
           ),
           const SizedBox(height: 12),
           _Card(
+            child: ValueListenableBuilder<double>(
+              valueListenable: gridMeters,
+              builder: (context, grid, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('地图刻度',
+                      style: TextStyle(
+                          color: C.text,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 7),
+                  const Text('算出来的距离和游戏里对不上，就改这里',
+                      style: TextStyle(color: C.textDim, fontSize: 14)),
+                  const SizedBox(height: 12),
+                  // 用 Wrap 不用 Row：窄屏加大字号时两个按钮排不下
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final g in kGridChoices)
+                        _GridChip(
+                          label: '${g.toInt()} 米 / 格',
+                          selected: grid == g,
+                          onTap: () => setGridMeters(g),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _Card(
             child: InkWell(
               // iOS 的更新由 App Store 负责。去 GitHub 查版本对 iPhone 用户
               // 毫无意义 —— 那边挂的是安卓 APK，点进去拿到一个装不了的文件。
@@ -176,6 +210,44 @@ class _MoreScreenState extends State<MoreScreen> {
           ),
         ],
       ),
+      ),
+    );
+  }
+}
+
+class _GridChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _GridChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? C.goldFaint : C.surfaceHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: selected ? C.gold : C.border),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? C.gold : C.textDim,
+              fontSize: 15,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ),
       ),
     );
   }

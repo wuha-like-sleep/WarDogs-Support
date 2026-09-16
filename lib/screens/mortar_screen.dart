@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../ballistics.dart';
+import '../data/settings.dart';
 import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/keypad.dart';
@@ -62,6 +63,8 @@ class _MortarScreenState extends State<MortarScreen> {
   /// 这行自相矛盾的提示永远消不掉。
   bool get _offsetIsSet => _offsetX.abs() > 1e-9 || _offsetY.abs() > 1e-9;
   int _step = 25;
+
+  double get _grid => gridMeters.value;
   List<SavedCoord> _saved = const [];
   List<ShotRecord> _shots = const [];
 
@@ -69,6 +72,18 @@ class _MortarScreenState extends State<MortarScreen> {
   void initState() {
     super.initState();
     _restore();
+    // 在「更多」里改了刻度，这边要立刻跟着重算
+    gridMeters.addListener(_onGridChanged);
+  }
+
+  @override
+  void dispose() {
+    gridMeters.removeListener(_onGridChanged);
+    super.dispose();
+  }
+
+  void _onGridChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _restore() async {
@@ -101,6 +116,7 @@ class _MortarScreenState extends State<MortarScreen> {
       gunY: gy,
       targetX: tx + _offsetX,
       targetY: ty + _offsetY,
+      gridMeters: _grid,
     );
   }
 
@@ -195,6 +211,7 @@ class _MortarScreenState extends State<MortarScreen> {
         offsetY: _offsetY,
         direction: d,
         stepMeters: _step.toDouble(),
+        gridMeters: _grid,
       );
       _offsetX = o.dx;
       _offsetY = o.dy;
@@ -266,8 +283,9 @@ class _MortarScreenState extends State<MortarScreen> {
       gunY: _val(Field.gunY)!,
       tgtX: _val(Field.tgtX)!,
       tgtY: _val(Field.tgtY)!,
-      offX: _offsetIsSet ? _offsetX : 0,
-      offY: _offsetIsSet ? _offsetY : 0,
+      // 存米：这条记录换个刻度打开也还原得回来
+      offX: _offsetIsSet ? _offsetX * _grid : 0,
+      offY: _offsetIsSet ? _offsetY * _grid : 0,
       rangeM: s.rangeRounded,
       bearing: s.bearingLabel,
       savedAt: DateTime.now().millisecondsSinceEpoch,
@@ -293,8 +311,9 @@ class _MortarScreenState extends State<MortarScreen> {
         _text[Field.gunY] = restored.gunY.toStringAsFixed(2);
         _text[Field.tgtX] = restored.tgtX.toStringAsFixed(2);
         _text[Field.tgtY] = restored.tgtY.toStringAsFixed(2);
-        _offsetX = restored.offX;
-        _offsetY = restored.offY;
+        // 记录里存的是米，换回当前刻度下的格
+        _offsetX = restored.offX / _grid;
+        _offsetY = restored.offY / _grid;
         _focus = null;
       }
     });
@@ -374,6 +393,7 @@ class _MortarScreenState extends State<MortarScreen> {
                     onNudge: _nudge,
                     offsetX: _offsetIsSet ? _offsetX : 0,
                     offsetY: _offsetIsSet ? _offsetY : 0,
+                    gridMeters: _grid,
                     onReset: () => setState(() {
                       _offsetX = 0;
                       _offsetY = 0;
@@ -666,6 +686,7 @@ class _CorrectionSection extends StatelessWidget {
   final ValueChanged<Nudge> onNudge;
   final double offsetX, offsetY;
   final VoidCallback onReset;
+  final double gridMeters;
 
   const _CorrectionSection({
     required this.step,
@@ -674,6 +695,7 @@ class _CorrectionSection extends StatelessWidget {
     required this.offsetX,
     required this.offsetY,
     required this.onReset,
+    required this.gridMeters,
   });
 
   bool get _hasOffset => offsetX != 0 || offsetY != 0;
@@ -718,8 +740,8 @@ class _CorrectionSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '已矫正 东 ${(offsetX * kGridMeters).round()} m · '
-                  '北 ${(offsetY * kGridMeters).round()} m',
+                  '已矫正 东 ${(offsetX * gridMeters).round()} m · '
+                  '北 ${(offsetY * gridMeters).round()} m',
                   style: const TextStyle(color: C.gold, fontSize: 14),
                 ),
               ),

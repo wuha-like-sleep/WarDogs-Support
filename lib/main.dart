@@ -4,10 +4,12 @@ import 'screens/logistics_screen.dart';
 import 'screens/loadout_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/mortar_screen.dart';
+import 'data/settings.dart';
 import 'theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadSettings();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,

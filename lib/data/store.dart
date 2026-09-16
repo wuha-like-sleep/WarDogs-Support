@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../ballistics.dart';
+
 /// 记住的一个坐标点。纯本地，存在手机里，不上传任何地方。
 class SavedCoord {
   final String label;
@@ -31,6 +33,8 @@ class SavedCoord {
 /// 反复试炮位时靠它回看对比。
 class ShotRecord {
   final double gunX, gunY, tgtX, tgtY;
+  /// 弹着点矫正量，单位是**米**（不是格）。
+  /// 米是物理量，地图刻度怎么改它都成立。
   final double offX, offY;
   final int rangeM;
   final String bearing;
@@ -79,8 +83,8 @@ class ShotRecord {
   /// 形如「矫正 北75 东-25」。只写非零的那一项，两项都有就都写。
   String get offsetLabel {
     final parts = <String>[];
-    final n = (offY * 100).round();
-    final e = (offX * 100).round();
+    final n = offY.round();
+    final e = offX.round();
     if (n != 0) parts.add('${n > 0 ? "北" : "南"}${n.abs()}');
     if (e != 0) parts.add('${e > 0 ? "东" : "西"}${e.abs()}');
     return parts.isEmpty ? '已矫正' : '矫正 ${parts.join(" ")}';
@@ -100,6 +104,7 @@ class Store {
   static const _kCoords = 'saved_coords_v1';
   static const _kShots = 'shot_records_v1';
   static const _kStep = 'nudge_step_v1';
+  static const _kGrid = 'grid_meters_v1';
   static const _kGunX = 'last_gun_x';
   static const _kGunY = 'last_gun_y';
   static const _kGunAt = 'last_gun_at';
@@ -152,6 +157,20 @@ class Store {
       _kShots,
       list.map((r) => jsonEncode(r.toJson())).toList(),
     );
+  }
+
+  /// 地图一格等于多少米。这个值有争议：社区文档普遍写 100，
+  /// 而实机验证是 10。做成可调的，免得它再错一次就得等发版。
+  static Future<double> loadGridMeters() async {
+    final sp = await SharedPreferences.getInstance();
+    final v = sp.getDouble(_kGrid);
+    if (v == null || v <= 0) return kGridMeters;
+    return v;
+  }
+
+  static Future<void> saveGridMeters(double m) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setDouble(_kGrid, m);
   }
 
   static Future<int> loadStep() async {

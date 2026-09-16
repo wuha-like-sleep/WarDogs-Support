@@ -21,11 +21,6 @@ const double kGridMeters = 10.0;
 const int kL81MinRange = 132;
 const int kL81MaxRange = 684;
 
-/// L81 迫击炮的有效射程（米）。社区实测口径，官方没公布过。
-/// 超出这个范围的诸元算得出来也打不到，必须让人一眼看见。
-const int kL81MinRange = 132;
-const int kL81MaxRange = 684;
-
 /// 八方位罗盘，用于把角度标成 SE / NW 这种后缀
 const List<String> _sectors = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
