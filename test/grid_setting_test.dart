@@ -13,22 +13,22 @@ void main() {
     gridMeters.value = kGridMeters;
   });
 
-  test('默认刻度是实机验证的 10 米', () async {
-    expect(kGridMeters, 10.0);
-    expect(await Store.loadGridMeters(), 10.0);
+  test('默认刻度 100 米', () async {
+    expect(kGridMeters, 100.0);
+    expect(await Store.loadGridMeters(), 100.0);
   });
 
   test('改过的刻度存得住', () async {
-    await setGridMeters(100);
-    expect(gridMeters.value, 100.0);
-    expect(await Store.loadGridMeters(), 100.0);
+    await setGridMeters(10);
+    expect(gridMeters.value, 10.0);
+    expect(await Store.loadGridMeters(), 10.0);
   });
 
   test('非法值不写入', () async {
     await setGridMeters(0);
-    expect(gridMeters.value, 10.0);
+    expect(gridMeters.value, 100.0);
     await setGridMeters(-5);
-    expect(gridMeters.value, 10.0);
+    expect(gridMeters.value, 100.0);
   });
 
   testWidgets('改刻度后，诸元当场跟着变', (t) async {
@@ -48,24 +48,24 @@ void main() {
       await t.pump();
     }
 
-    // 炮位(0,0) 目标(0,50)
+    // 炮位(0,0) 目标(0,3)。用 3 不用 5：
+    // 换算出的 50 会和矫正步长里的「50」按钮撞名，finder 分不清。
     await press('0');
     await press('下一项');
     await press('0');
     await press('下一项');
     await press('0');
     await press('下一项');
-    await press('5');
-    await press('0');
+    await press('3');
     await t.pump();
-    expect(find.text('500'), findsOneWidget);
+    expect(find.text('300'), findsOneWidget);
 
-    // 切到 100 米刻度，同一组坐标应该变成十倍
-    await setGridMeters(100);
+    // 切到 10 米刻度，同一组坐标应该变成十分之一
+    await setGridMeters(10);
     await t.pumpAndSettle();
-    expect(find.text('5000'), findsOneWidget,
+    expect(find.text('30'), findsOneWidget,
         reason: '在「更多」里改了刻度，计算页必须立刻重算，'
             '不能因为 IndexedStack 保活就还拿着旧值');
-    expect(find.text('500'), findsNothing);
+    expect(find.text('300'), findsNothing);
   });
 }

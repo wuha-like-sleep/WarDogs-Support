@@ -104,7 +104,9 @@ class Store {
   static const _kCoords = 'saved_coords_v1';
   static const _kShots = 'shot_records_v1';
   static const _kStep = 'nudge_step_v1';
-  static const _kGrid = 'grid_meters_v1';
+  // v1 是刻度被改错成 10 米那一版存下的，一律作废，
+  // 否则升级后仍然沿用错值，用户看不出来。
+  static const _kGrid = 'grid_meters_v2';
   static const _kGunX = 'last_gun_x';
   static const _kGunY = 'last_gun_y';
   static const _kGunAt = 'last_gun_at';

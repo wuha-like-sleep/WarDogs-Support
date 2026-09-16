@@ -42,18 +42,17 @@ void main() {
     // 一开始四个格子都空，诸元位置显示横杠而不是乱数
     expect(find.text('—'), findsNWidgets(2));
 
-    await typeNumber(t, '100.54');
+    await typeNumber(t, '63.41');
     await press(t, '下一项');
-    await typeNumber(t, '59.02');
+    await typeNumber(t, '104.52');
     await press(t, '下一项');
-    await typeNumber(t, '62.96');
+    await typeNumber(t, '67.56');
     await press(t, '下一项');
-    await typeNumber(t, '95.79');
+    await typeNumber(t, '100.67');
     await t.pump();
 
-    // 实机验证过的一炮。按旧刻度（100 米）会算成 5258 米
-    expect(find.text('526'), findsOneWidget);
-    expect(find.text('314NW'), findsOneWidget);
+    expect(find.text('566'), findsOneWidget);
+    expect(find.text('133SE'), findsOneWidget);
   });
 
   testWidgets('少填一个格子就不出诸元', (t) async {
@@ -98,7 +97,7 @@ void main() {
     await press(t, '下一项');
     await typeNumber(t, '0');
     await press(t, '下一项');
-    await typeNumber(t, '50');
+    await typeNumber(t, '5');
     await t.pump();
     expect(find.text('500'), findsOneWidget);
 
@@ -127,7 +126,7 @@ void main() {
     await press(t, '下一项');
     await typeNumber(t, '0');
     await press(t, '下一项');
-    await typeNumber(t, '50');
+    await typeNumber(t, '5');
     await t.pump();
     expect(find.text('500'), findsOneWidget);
 
@@ -138,7 +137,7 @@ void main() {
 
     // 换目标：清空重输 60。焦点还在 tgtY 上。
     await press(t, 'C');
-    await typeNumber(t, '60');
+    await typeNumber(t, '6');
     await t.pump();
 
     // 新目标应该是干干净净的 600，而不是带着上一发 25 米修正的 575
@@ -191,7 +190,7 @@ void main() {
     await press(t, '下一项');
     await typeNumber(t, '0');
     await press(t, '下一项');
-    await typeNumber(t, '50');
+    await typeNumber(t, '5');
     await t.pump();
 
     await scrollAndPress(t, '10');
