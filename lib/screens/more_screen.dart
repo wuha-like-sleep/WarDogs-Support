@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/updater.dart';
 import '../theme.dart';
+import '../widgets/page_body.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -80,7 +81,8 @@ class _MoreScreenState extends State<MoreScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('更多')),
-      body: ListView(
+      body: PageBody(
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
         children: [
           _Card(
@@ -161,6 +163,7 @@ class _MoreScreenState extends State<MoreScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../theme.dart';
+import '../widgets/page_body.dart';
 
 class LogisticsScreen extends StatefulWidget {
   const LogisticsScreen({super.key});
@@ -18,7 +19,8 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
       appBar: AppBar(title: const Text('后勤')),
       body: Column(
         children: [
-          Padding(
+          PageBody(
+            child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
             child: _Segmented(
               labels: const ['载具', '进度线', '机制'],
@@ -26,12 +28,15 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
               onChanged: (i) => setState(() => _tab = i),
             ),
           ),
+          ),
           Expanded(
-            child: switch (_tab) {
-              0 => const _Vehicles(),
-              1 => const _Tracks(),
-              _ => const _Systems(),
-            },
+            child: PageBody(
+              child: switch (_tab) {
+                0 => const _Vehicles(),
+                1 => const _Tracks(),
+                _ => const _Systems(),
+              },
+            ),
           ),
         ],
       ),

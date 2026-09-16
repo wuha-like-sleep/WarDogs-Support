@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../theme.dart';
+import '../widgets/page_body.dart';
 import 'compare_screen.dart';
 
 class LoadoutScreen extends StatefulWidget {
@@ -43,7 +44,8 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: PageBody(
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
@@ -117,6 +119,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                   ),
           ),
         ],
+      ),
       ),
     );
   }
