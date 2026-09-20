@@ -156,12 +156,19 @@ void main() {
   });
 
   testWidgets('切到格子后第一个数字是重打，不是接在旧值后面', (t) async {
+    // 视口给足：这条验的是输入行为，不是滚动。
+    // 默认 800×600 下敌人坐标框会滚出构建范围，find 不到。
+    t.view.physicalSize = const Size(1200, 4200);
+    t.view.devicePixelRatio = 3.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+
     await pumpScreen(t);
     await typeNumber(t, '67.56');
     await press(t, '下一项');
     await press(t, '下一项');
     await press(t, '下一项');
-    // 转一圈回到第一个格子，此时应该是「重打」状态
+    // 现在焦点在敌人 Y 上，是「刚切过来」的状态
     await typeNumber(t, '70.12');
     await t.pump();
     expect(find.text('70.12'), findsOneWidget);
@@ -202,5 +209,60 @@ void main() {
     await scrollAndPress(t, '清零');
     expect(find.textContaining('已矫正'), findsNothing);
     expect(find.text('500'), findsOneWidget);
+  });
+
+  testWidgets('刚打开时诸元卡片不能被顶出屏幕', (t) async {
+    // 这条盯的是「看得见」，不是「找得到」——
+    // 滚出视口的组件在 widget 树里照样 find 得到，
+    // 134 条测试全绿的时候，真机上卡片顶部是被截掉的。
+    t.view.physicalSize = const Size(1125, 2001); // iPhone SE 375×667
+    t.view.devicePixelRatio = 3.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+
+    await pumpScreen(t);
+
+    for (final label in ['RNG', '方向']) {
+      final r = t.getRect(find.text(label));
+      expect(r.top, greaterThanOrEqualTo(0.0),
+          reason: '「$label」被顶到屏幕上方看不见了（top=${r.top}）');
+      expect(r.bottom, lessThanOrEqualTo(667.0),
+          reason: '「$label」跑到屏幕下方去了（bottom=${r.bottom}）');
+    }
+  });
+
+  testWidgets('小屏上切到敌人坐标，那个框必须滚进视野', (t) async {
+    // 320×568（iPhone SE 一代）：目前能装下的最小屏。
+    // 键盘一弹，敌人坐标那两个框就在折叠线附近。
+    // 这条盯的是「正在输入的框到底看不看得见」，
+    // 不是「找不找得到」—— 看不见就等于闭着眼敲坐标。
+    t.view.physicalSize = const Size(960, 1704);
+    t.view.devicePixelRatio = 3.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+
+    await pumpScreen(t);
+
+    // 切到敌人 X
+    await press(t, '下一项');
+    await press(t, '下一项');
+    await t.pumpAndSettle();
+
+    // 敌人位置那一组必须出现在屏幕内
+    final label = find.text('敌人位置');
+    expect(label, findsOneWidget,
+        reason: '敌人位置整块都没构建 —— 滚动没生效');
+
+    final r = t.getRect(label);
+    expect(r.top, greaterThanOrEqualTo(0.0),
+        reason: '「敌人位置」在屏幕上方外面（top=${r.top}）');
+
+    // 光标签可见没用 —— 真正要输入的是它下面那两个框（高 52，外加 6 间距）。
+    // 只查标签的话，标签卡在屏幕最下沿也算过，而框还在外面。
+    const fieldBottom = 6 + 52.0;
+    expect(r.bottom + fieldBottom, lessThanOrEqualTo(568.0),
+        reason: '「敌人位置」下面那两个输入框超出屏幕了'
+            '（标签底 ${r.bottom}，框底 ${r.bottom + fieldBottom}）—— '
+            '玩家看不见自己在往哪个框里敲');
   });
 }

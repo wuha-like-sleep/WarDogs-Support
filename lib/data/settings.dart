@@ -13,8 +13,17 @@ final gridMeters = ValueNotifier<double>(kGridMeters);
 /// 留着以防某些地图真的不一样。
 const List<double> kGridChoices = [10, 100];
 
+/// 当前用哪门炮。射程判断按它走。
+final artillery = ValueNotifier<Artillery>(Artillery.l81);
+
 Future<void> loadSettings() async {
   gridMeters.value = await Store.loadGridMeters();
+  artillery.value = await Store.loadArtillery();
+}
+
+Future<void> setArtillery(Artillery a) async {
+  artillery.value = a;
+  await Store.saveArtillery(a);
 }
 
 Future<void> setGridMeters(double m) async {

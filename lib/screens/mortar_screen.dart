@@ -48,11 +48,14 @@ class _MortarScreenState extends State<MortarScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = _fieldKeys[f]?.currentContext;
       if (ctx == null) return;
+      // keepVisibleAtEnd：只在这个格子确实不可见时才滚，滚最小距离。
+      // 不能用 alignment —— 那会不管三七二十一滚到指定位置，
+      // 启动时就把诸元卡片的顶部（RNG / 方向 两个标签）顶出屏幕。
       Scrollable.ensureVisible(
         ctx,
-        alignment: 0.35,
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
       );
     });
   }
@@ -74,11 +77,13 @@ class _MortarScreenState extends State<MortarScreen> {
     _restore();
     // 在「更多」里改了刻度，这边要立刻跟着重算
     gridMeters.addListener(_onGridChanged);
+    artillery.addListener(_onGridChanged);
   }
 
   @override
   void dispose() {
     gridMeters.removeListener(_onGridChanged);
+    artillery.removeListener(_onGridChanged);
     super.dispose();
   }
 
@@ -101,7 +106,8 @@ class _MortarScreenState extends State<MortarScreen> {
       // 炮位一局之内不动。上次记着就直接跳到敌人坐标，省掉两次点击
       if (gx.isNotEmpty && gy.isNotEmpty) _focus = Field.tgtX;
     });
-    _ensureFocusVisible();
+    // 启动时不主动滚。焦点落在第一个格子上本来就可见，
+    // 强行滚只会把诸元卡片顶出屏幕。
   }
 
   double? _val(Field f) => double.tryParse(_text[f]!);
@@ -264,6 +270,23 @@ class _MortarScreenState extends State<MortarScreen> {
     setState(() => _saved = list);
   }
 
+  /// 在 L81 和 SPH-2 之间切。射程判断跟着走。
+  Future<void> _toggleGun() async {
+    final next =
+        artillery.value == Artillery.l81 ? Artillery.sph2 : Artillery.l81;
+    await setArtillery(next);
+    if (!mounted) return;
+    _toast('已切到 ${next.label}');
+  }
+
+  /// 在 100 / 10 之间切。默认 100 是对的，留这个是为了万一。
+  Future<void> _toggleGrid() async {
+    final next = gridMeters.value == 100 ? 10.0 : 100.0;
+    await setGridMeters(next);
+    if (!mounted) return;
+    _toast('地图刻度已切到 ${next.toInt()} 米/格');
+  }
+
   Future<void> _copy() async {
     final s = _solution;
     if (s == null) {
@@ -361,9 +384,20 @@ class _MortarScreenState extends State<MortarScreen> {
               behavior: HitTestBehavior.opaque,
               onTap: () => setState(() => _focus = null),
               child: ListView(
+                // 四个坐标框必须始终保持构建：滚出视口被销毁后，
+                // GlobalKey 的 currentContext 变空，
+                // 「切焦点自动滚进视野」就彻底失效了（而且悄无声息）。
+                cacheExtent: 1200,
                 padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
                 children: [
-                  _SolutionCard(solution: s, onCopy: _copy),
+                  _SolutionCard(
+                    solution: s,
+                    onCopy: _copy,
+                    gun: artillery.value,
+                    grid: _grid,
+                    onToggleGun: _toggleGun,
+                    onToggleGrid: _toggleGrid,
+                  ),
                   const SizedBox(height: 12),
                   _CoordGroup(
                     title: '我的炮位',
@@ -422,8 +456,19 @@ class _MortarScreenState extends State<MortarScreen> {
 class _SolutionCard extends StatelessWidget {
   final FireSolution? solution;
   final VoidCallback onCopy;
+  final Artillery gun;
+  final double grid;
+  final VoidCallback onToggleGun;
+  final VoidCallback onToggleGrid;
 
-  const _SolutionCard({required this.solution, required this.onCopy});
+  const _SolutionCard({
+    required this.solution,
+    required this.onCopy,
+    required this.gun,
+    required this.grid,
+    required this.onToggleGun,
+    required this.onToggleGrid,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -456,7 +501,7 @@ class _SolutionCard extends StatelessWidget {
               ),
             ],
           ),
-          if (s?.rangeWarning != null) ...[
+          if (s?.rangeWarningFor(gun) != null) ...[
             const SizedBox(height: 10),
             Row(
               children: [
@@ -464,37 +509,93 @@ class _SolutionCard extends StatelessWidget {
                 const SizedBox(width: 7),
                 Expanded(
                   child: Text(
-                    s!.rangeWarning!,
+                    s!.rangeWarningFor(gun)!,
                     style: const TextStyle(color: C.gold, fontSize: 14),
                   ),
                 ),
               ],
             ),
           ],
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Material(
-              color: C.goldFaint,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
+          const SizedBox(height: 8),
+          // 用 Wrap 不用 Row：窄屏或大字号下这三个排不下，
+          // Row 会直接横向溢出。
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 8,
+            children: [
+              // 这两个参数都会改变上面那两个数字，必须和它们同屏。
+              // 藏进设置里 = 把会出错的东西藏起来。
+              _MiniToggle(
+                icon: Icons.adjust,
+                label: gun.shortLabel,
+                onTap: onToggleGun,
+              ),
+              _MiniToggle(
+                icon: Icons.grid_4x4,
+                label: '${grid.toInt()}m/格',
+                onTap: onToggleGrid,
+              ),
+              Material(
+                color: C.goldFaint,
                 borderRadius: BorderRadius.circular(8),
-                onTap: onCopy,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                  child: Text(
-                    '复制诸元',
-                    style: TextStyle(
-                      color: C.gold,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: onCopy,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                    child: Text(
+                      '复制诸元',
+                      style: TextStyle(
+                        color: C.gold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 诸元卡片底部那两个小开关。低调但一眼能看见当前值。
+class _MiniToggle extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _MiniToggle({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: C.surfaceHigh,
+      borderRadius: BorderRadius.circular(7),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(7),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: C.textFaint),
+              const SizedBox(width: 5),
+              Text(label,
+                  style: const TextStyle(color: C.textDim, fontSize: 13)),
+            ],
+          ),
+        ),
       ),
     );
   }

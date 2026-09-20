@@ -107,6 +107,7 @@ class Store {
   // v1 是刻度被改错成 10 米那一版存下的，一律作废，
   // 否则升级后仍然沿用错值，用户看不出来。
   static const _kGrid = 'grid_meters_v2';
+  static const _kArtillery = 'artillery_v1';
   static const _kGunX = 'last_gun_x';
   static const _kGunY = 'last_gun_y';
   static const _kGunAt = 'last_gun_at';
@@ -173,6 +174,20 @@ class Store {
   static Future<void> saveGridMeters(double m) async {
     final sp = await SharedPreferences.getInstance();
     await sp.setDouble(_kGrid, m);
+  }
+
+  static Future<Artillery> loadArtillery() async {
+    final sp = await SharedPreferences.getInstance();
+    final name = sp.getString(_kArtillery);
+    return Artillery.values.firstWhere(
+      (a) => a.name == name,
+      orElse: () => Artillery.l81,
+    );
+  }
+
+  static Future<void> saveArtillery(Artillery a) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString(_kArtillery, a.name);
   }
 
   static Future<int> loadStep() async {

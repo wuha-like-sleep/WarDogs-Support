@@ -16,10 +16,21 @@ import 'dart:math' as math;
 /// 别只凭一个换算后的数字。刻度也可以在 App 里直接切，不必改代码。
 const double kGridMeters = 100.0;
 
-/// L81 迫击炮的有效射程（米）。社区实测口径，官方没公布过。
-/// 超出这个范围的诸元算得出来也打不到，必须让人一眼看见。
-const int kL81MinRange = 132;
-const int kL81MaxRange = 684;
+/// 火炮类型。射程不同，同一组坐标对 L81 打不到、对 SPH-2 可能正好。
+/// 射程是社区实测口径，官方没公布过。
+enum Artillery {
+  l81('L81 迫击炮', 132, 684),
+  sph2('SPH-2 自行火炮', 780, 2629);
+
+  const Artillery(this.label, this.minRange, this.maxRange);
+
+  final String label;
+  final int minRange;
+  final int maxRange;
+
+  /// 短名，放在诸元卡片上用
+  String get shortLabel => this == Artillery.l81 ? 'L81' : 'SPH-2';
+}
 
 /// 八方位罗盘，用于把角度标成 SE / NW 这种后缀
 const List<String> _sectors = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
@@ -55,15 +66,17 @@ class FireSolution {
   /// 形如 "133SE"
   String get bearingLabel => '$bearingRounded$compass';
 
-  /// 这一发 L81 打不打得到
-  bool get inL81Range =>
-      rangeRounded >= kL81MinRange && rangeRounded <= kL81MaxRange;
+  /// 这一发打不打得到
+  bool inRangeOf(Artillery a) =>
+      rangeRounded >= a.minRange && rangeRounded <= a.maxRange;
 
   /// 超出射程时给一句人话，射程内返回 null
-  String? get rangeWarning {
-    if (inL81Range) return null;
-    if (rangeRounded < kL81MinRange) return '太近，L81 最少 $kL81MinRange 米';
-    return '超出射程，L81 最远 $kL81MaxRange 米';
+  String? rangeWarningFor(Artillery a) {
+    if (inRangeOf(a)) return null;
+    if (rangeRounded < a.minRange) {
+      return '太近，${a.shortLabel} 最少 ${a.minRange} 米';
+    }
+    return '超出射程，${a.shortLabel} 最远 ${a.maxRange} 米';
   }
 
   /// 可以直接粘给队友的一行诸元
