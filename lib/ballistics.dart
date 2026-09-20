@@ -19,10 +19,15 @@ const double kGridMeters = 100.0;
 /// 火炮类型。射程不同，同一组坐标对 L81 打不到、对 SPH-2 可能正好。
 /// 射程是社区实测口径，官方没公布过。
 enum Artillery {
-  l81('L81 迫击炮', 132, 684),
-  sph2('SPH-2 自行火炮', 780, 2629);
+  l81('l81', 'L81 迫击炮', 132, 684),
+  sph2('sph2', 'SPH-2 自行火炮', 780, 2629);
 
-  const Artillery(this.label, this.minRange, this.maxRange);
+  const Artillery(this.storageKey, this.label, this.minRange, this.maxRange);
+
+  /// 存本地用的键。**不要改用 .name** —— 那返回的是声明标识符，
+  /// 开了 --obfuscate 之后可能被重命名，升级一次用户的选择就没了，
+  /// 而且不报错、看不出来。这里写死一个字符串，混淆碰不到它。
+  final String storageKey;
 
   final String label;
   final int minRange;

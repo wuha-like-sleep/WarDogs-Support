@@ -55,4 +55,36 @@ void main() {
       expect(find.textContaining('检查更新'), findsOneWidget);
     });
   });
+
+  group('双协议', () {
+    test('两份协议文件都在', () {
+      expect(File('LICENSE').existsSync(), isTrue);
+      expect(File('LICENSE-DATA').existsSync(), isTrue);
+    });
+
+    test('代码协议是 GPL-3.0，且带 App Store 例外', () {
+      final t = File('LICENSE').readAsStringSync();
+      expect(t, contains('GNU GENERAL PUBLIC LICENSE'));
+      expect(t, contains('Version 3'));
+      // 少了这条例外，GPL 与 Apple 服务条款冲突，App 可能被下架
+      expect(t, contains('App Store'),
+          reason: 'App Store 例外条款不见了 —— 没有它上架有被投诉下架的风险');
+      expect(t, contains('第 7 条'));
+    });
+
+    test('数据协议是 CC BY-SA 4.0 并写明范围', () {
+      final t = File('LICENSE-DATA').readAsStringSync();
+      expect(t, contains('CC BY-SA 4.0'));
+      expect(t, contains('game_data.dart'),
+          reason: '没写清哪些算「数据」，这份协议就没有边界');
+    });
+
+    test('README 的协议说明和实际文件一致', () {
+      final t = File('README.md').readAsStringSync();
+      expect(t, contains('GPL-3.0'));
+      expect(t, contains('CC BY-SA 4.0'));
+      expect(t.contains('本项目以 [MIT 许可证](LICENSE)开源'), isFalse,
+          reason: 'README 还在说 MIT，和 LICENSE 对不上');
+    });
+  });
 }

@@ -8,7 +8,8 @@
 
 [![下载](https://img.shields.io/badge/下载-Android%20APK-E0B24A?style=for-the-badge)](https://github.com/wuha-like-sleep/WarDogs-Support/releases/latest)
 [![离线](https://img.shields.io/badge/完全离线-无需联网-2ea043?style=for-the-badge)](#完全离线)
-[![License](https://img.shields.io/badge/License-MIT-8A9199?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/代码-GPL--3.0-8A9199?style=for-the-badge)](LICENSE)
+[![Data](https://img.shields.io/badge/数据-CC%20BY--SA%204.0-8A9199?style=for-the-badge)](LICENSE-DATA)
 
 </div>
 
@@ -91,18 +92,41 @@ iOS 版本请关注后续发布。
 
 ## 开源与署名
 
-本项目以 [MIT 许可证](LICENSE)开源。欢迎任何人拿去用、改、二次开发 ——
-这本来就是给玩家做的东西，多几个人做只会更好。
+**代码和数据分开授权，两者要求不同。**
 
-唯一的要求是 MIT 写明的那条：**保留原始版权声明**。如果你的项目借鉴或复用了这里的
-代码，请标明出处：
+| | 协议 | 你可以 | 但必须 |
+|---|---|---|---|
+| **代码** | [GPL-3.0](LICENSE) | 用、改、再分发 | 你的项目也开源，同样用 GPL |
+| **数据** | [CC BY-SA 4.0](LICENSE-DATA) | 复制、修改、商用 | 标明出处，且成果同样开放 |
+
+「数据」指 `lib/data/game_data.dart` 里整理出来的游戏资料：枪械名录、伤害数值、
+载具、进度线、机制说明，以及每条数据上的存疑标记。
+
+出处请写：
 
 ```
 https://github.com/wuha-like-sleep/WarDogs-Support
 ```
 
-尤其是诸元计算逻辑（[`lib/ballistics.dart`](lib/ballistics.dart)）—— 那套公式是从
-实机数据一点点反推并验证出来的，不是照抄来的。用它的话，麻烦提一句来源。
+### 为什么不是 MIT 了
+
+一开始是 MIT。MIT 允许任何人拿去闭源商用，只要保留一行版权声明 ——
+抄走的成本接近于零。
+
+换成 GPL 之后，谁用了这里的代码，他自己的项目也得开源。这不是为了不让人用，
+是为了让「拿去用」和「拿去卖」区别开：真心想一起做的人，GPL 拦不住；
+想把别人的东西包一层卖钱的，GPL 就是成本。
+
+数据单独用 CC BY-SA，是因为**那才是真正花了功夫的部分**。诸元公式
+（[`lib/ballistics.dart`](lib/ballistics.dart)）二十行，谁都能自己推；
+而哪些数字可信、哪些存疑、为什么某把枪整块留空，是多来源交叉比对出来的判断。
+
+### App Store 例外
+
+GPL 的分发条款和 Apple 的服务条款存在公认冲突，历史上有项目因此被下架。
+[LICENSE](LICENSE) 顶部按 GPL 第 7 条附加了一条例外许可，明确允许通过
+应用商店分发。用这份代码上架的人仍须履行 GPL 的其余义务 ——
+最重要的是向使用者提供完整源码。
 
 ---
 
@@ -169,5 +193,5 @@ iOS 归档**不要**加 `--no-codesign`，否则 Distribute 时会报 No Team Fo
 </details>
 
 <div align="center">
-<sub>MIT License · © 2026 wuha-like-sleep</sub>
+<sub>代码 GPL-3.0 · 数据 CC BY-SA 4.0 · © 2026 wuha-like-sleep</sub>
 </div>

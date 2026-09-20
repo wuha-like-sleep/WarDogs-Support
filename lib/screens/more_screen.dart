@@ -193,6 +193,21 @@ class _MoreScreenState extends State<MoreScreen> {
                   '如权利人认为有不妥之处，请联系删除。',
                   style: TextStyle(color: C.textDim, fontSize: 14, height: 1.7),
                 ),
+                SizedBox(height: 14),
+                // GPL 要求让使用者知道协议、并且拿得到源码。
+                // 写在这里既是履约，也让被扒皮重打包的版本更显眼。
+                Text('开源',
+                    style: TextStyle(
+                        color: C.gold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600)),
+                SizedBox(height: 7),
+                Text(
+                  '代码以 GPL-3.0 授权，资料以 CC BY-SA 4.0 授权。\n'
+                  '源码与完整协议：\n'
+                  'github.com/wuha-like-sleep/WarDogs-Support',
+                  style: TextStyle(color: C.textDim, fontSize: 14, height: 1.7),
+                ),
               ],
             ),
           ),

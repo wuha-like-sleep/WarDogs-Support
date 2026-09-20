@@ -180,14 +180,14 @@ class Store {
     final sp = await SharedPreferences.getInstance();
     final name = sp.getString(_kArtillery);
     return Artillery.values.firstWhere(
-      (a) => a.name == name,
+      (a) => a.storageKey == name,
       orElse: () => Artillery.l81,
     );
   }
 
   static Future<void> saveArtillery(Artillery a) async {
     final sp = await SharedPreferences.getInstance();
-    await sp.setString(_kArtillery, a.name);
+    await sp.setString(_kArtillery, a.storageKey);
   }
 
   static Future<int> loadStep() async {

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wardogs_assistant/ballistics.dart';
 import 'package:wardogs_assistant/data/store.dart';
 import 'package:wardogs_assistant/data/updater.dart';
 
@@ -81,6 +82,18 @@ void main() {
       final (x, y) = await Store.loadLastGun();
       expect(x, '');
       expect(y, '');
+    });
+  });
+
+  group('混淆安全', () {
+    test('火炮枚举的存储键是写死的，不跟随标识符', () {
+      // 开了 --obfuscate 之后 .name 可能被重命名。
+      // 这两个键一旦变了，老用户的选择会静默丢失。
+      expect(Artillery.l81.storageKey, 'l81');
+      expect(Artillery.sph2.storageKey, 'sph2');
+      // 每个都不一样，否则 firstWhere 会认错
+      final keys = Artillery.values.map((a) => a.storageKey).toSet();
+      expect(keys.length, Artillery.values.length);
     });
   });
 }
