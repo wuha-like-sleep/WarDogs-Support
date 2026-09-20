@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 /// 当前版本，发版时改这里（要和 pubspec.yaml 的 version 一致）
-const String kAppVersion = '1.0.6';
+const String kAppVersion = '1.0.7';
 
 /// App Store 的应用编号。iOS 走商店更新，不走 GitHub。
 const String kAppStoreId = '6812643556';
