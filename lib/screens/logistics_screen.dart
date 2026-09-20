@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../data/game_data.dart';
+import '../data/progression.dart';
 import '../theme.dart';
 import '../widgets/page_body.dart';
+import 'ladder_screen.dart';
 
 class LogisticsScreen extends StatefulWidget {
   const LogisticsScreen({super.key});
@@ -199,15 +201,6 @@ class _SectionHeader extends StatelessWidget {
 class _Tracks extends StatelessWidget {
   const _Tracks();
 
-  static const _icons = {
-    '突击兵': Icons.bolt,
-    '医护兵': Icons.medical_services,
-    '侦察兵': Icons.visibility,
-    '支援兵': Icons.inventory_2,
-    '驾驶员': Icons.directions_car,
-    '飞行员': Icons.flight,
-  };
-
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -229,45 +222,203 @@ class _Tracks extends StatelessWidget {
         for (final t in kTracks)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: C.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: C.border.withValues(alpha: 0.5)),
-              ),
-              child: Column(
+            child: _TrackCard(
+              track: t,
+              ladder: _ladderFor(t.name),
+            ),
+          ),
+        // 副武器和护甲不挂在六条兵种线上，走通用账号等级
+        if (_ladderFor('WARDOGS 等级') != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _LadderEntry(ladder: _ladderFor('WARDOGS 等级')!),
+          ),
+        const SizedBox(height: 6),
+        _NoLadderNote(),
+      ],
+    );
+  }
+
+  static Ladder? _ladderFor(String name) {
+    for (final l in kLadders) {
+      if (l.track == name) return l;
+    }
+    return null;
+  }
+}
+
+/// 不挂在任何梯子上的枪，单独说一句，免得玩家在表里翻半天
+class _NoLadderNote extends StatelessWidget {
+  const _NoLadderNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: C.surface,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: C.border.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('不用解锁的枪',
+              style: TextStyle(
+                  color: C.gold, fontSize: 15, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 10),
+          for (final e in kNoLadderWeapons.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: C.goldFaint,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: Icon(_icons[t.name] ?? Icons.person,
-                            size: 19, color: C.gold),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(t.name,
-                          style: const TextStyle(
-                              color: C.text,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600)),
-                    ],
+                  SizedBox(
+                    width: 132,
+                    child: Text(e.key,
+                        style: const TextStyle(color: C.text, fontSize: 14)),
                   ),
-                  const SizedBox(height: 12),
-                  _Line('怎么涨', t.howToLevel),
-                  const SizedBox(height: 6),
-                  _Line('解锁什么', t.unlocks),
+                  Expanded(
+                    child: Text(e.value,
+                        style:
+                            const TextStyle(color: C.textDim, fontSize: 14)),
+                  ),
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 通用等级梯子的入口
+class _LadderEntry extends StatelessWidget {
+  final Ladder ladder;
+
+  const _LadderEntry({required this.ladder});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: C.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => LadderScreen(ladder: ladder))),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: C.goldFaint,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: const Icon(Icons.military_tech, size: 19, color: C.gold),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(ladder.track,
+                        style: const TextStyle(
+                            color: C.text,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 3),
+                    Text('副武器和护甲走这条，共 ${ladder.unlocks.length} 项',
+                        style: const TextStyle(color: C.textDim, fontSize: 14)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: C.textFaint, size: 20),
+            ],
           ),
-      ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 兵种卡片：点开看这条线的完整解锁表
+class _TrackCard extends StatelessWidget {
+  final Track track;
+  final Ladder? ladder;
+
+  const _TrackCard({required this.track, this.ladder});
+
+  static const _icons = {
+    '突击兵': Icons.bolt,
+    '医护兵': Icons.medical_services,
+    '侦察兵': Icons.visibility,
+    '支援兵': Icons.inventory_2,
+    '驾驶员': Icons.directions_car,
+    '飞行员': Icons.flight,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final l = ladder;
+    return Material(
+      color: C.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: l == null
+            ? null
+            : () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => LadderScreen(ladder: l))),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: C.border.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: C.goldFaint,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(_icons[track.name] ?? Icons.person,
+                        size: 19, color: C.gold),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(track.name,
+                        style: const TextStyle(
+                            color: C.text,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  if (l != null)
+                    const Icon(Icons.chevron_right,
+                        color: C.textFaint, size: 20),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _Line('怎么涨', track.howToLevel),
+              const SizedBox(height: 6),
+              if (l != null)
+                _Line('解锁表',
+                    '${l.unlocks.length} 项，${l.weaponCount} 把枪 —— 点开看')
+              else
+                _Line('解锁什么', track.unlocks),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
