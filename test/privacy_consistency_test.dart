@@ -57,19 +57,27 @@ void main() {
   });
 
   group('双协议', () {
-    test('两份协议文件都在', () {
+    test('三份协议文件都在', () {
       expect(File('LICENSE').existsSync(), isTrue);
+      expect(File('LICENSE-EXCEPTION').existsSync(), isTrue);
       expect(File('LICENSE-DATA').existsSync(), isTrue);
     });
 
-    test('代码协议是 GPL-3.0，且带 App Store 例外', () {
+    test('LICENSE 是 GPL-3.0 原文，不能夹带别的', () {
       final t = File('LICENSE').readAsStringSync();
-      expect(t, contains('GNU GENERAL PUBLIC LICENSE'));
-      expect(t, contains('Version 3'));
-      // 少了这条例外，GPL 与 Apple 服务条款冲突，App 可能被下架
-      expect(t, contains('App Store'),
-          reason: 'App Store 例外条款不见了 —— 没有它上架有被投诉下架的风险');
+      expect(t.trimLeft(), startsWith('GNU GENERAL PUBLIC LICENSE'),
+          reason: '前面加了自定义说明，GitHub 就识别不出协议、'
+              '徽章会变成 Other，别人看不到「这是 GPL」这个信号');
+      expect(t, contains('Version 3, 29 June 2007'));
+    });
+
+    test('App Store 例外单独成文且引用了 GPL 第 7 条', () {
+      final t = File('LICENSE-EXCEPTION').readAsStringSync();
+      // 少了这条，GPL 与 Apple 服务条款冲突，一封投诉就能让 App 下架
+      expect(t, contains('App Store'));
       expect(t, contains('第 7 条'));
+      expect(t, contains('源代码'),
+          reason: '例外只豁免分发限制，提供源码的义务还在，必须写明');
     });
 
     test('数据协议是 CC BY-SA 4.0 并写明范围', () {

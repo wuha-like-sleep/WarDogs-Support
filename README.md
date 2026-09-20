@@ -124,9 +124,17 @@ https://github.com/wuha-like-sleep/WarDogs-Support
 ### App Store 例外
 
 GPL 的分发条款和 Apple 的服务条款存在公认冲突，历史上有项目因此被下架。
-[LICENSE](LICENSE) 顶部按 GPL 第 7 条附加了一条例外许可，明确允许通过
-应用商店分发。用这份代码上架的人仍须履行 GPL 的其余义务 ——
+[LICENSE-EXCEPTION](LICENSE-EXCEPTION) 按 GPL 第 7 条附加了一条例外许可，
+明确允许通过应用商店分发。用这份代码上架的人仍须履行 GPL 的其余义务 ——
 最重要的是向使用者提供完整源码。
+
+协议一共三份，各管一段：
+
+| 文件 | 管什么 |
+|---|---|
+| [LICENSE](LICENSE) | 代码，GPL-3.0 正文 |
+| [LICENSE-EXCEPTION](LICENSE-EXCEPTION) | 允许上架应用商店的附加许可 |
+| [LICENSE-DATA](LICENSE-DATA) | 游戏资料，CC BY-SA 4.0 |
 
 ---
 
