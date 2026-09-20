@@ -308,27 +308,37 @@ class _WeaponSheet extends StatelessWidget {
               style: const TextStyle(color: C.gold, fontSize: 14)),
           const SizedBox(height: 18),
           // 没有数据的字段显示横杠，整块不消失 —— 免得看着像功能坏了
-          _Row('价格', w.priceUsd == null ? null : '\$${w.priceUsd}'),
-          _Row('重量', w.weightKg == null ? null : '${w.weightKg} kg'),
-          _Row('口径', w.caliber),
-          _Row('射击模式', w.fireModes),
-          _Row('进度线', w.track),
-          _Row('解锁', w.unlock),
-          if (w.damage.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            const Text('爆头伤害 / 护甲等级',
-                style: TextStyle(
-                    color: C.text, fontSize: 16, fontWeight: FontWeight.w600)),
+          _Row('价格', w.priceUsd == null ? null : '\$${w.priceUsd}',
+              doubtful: w.isFieldDoubtful('priceUsd')),
+          _Row('重量', w.weightKg == null ? null : '${w.weightKg} kg',
+              doubtful: w.isFieldDoubtful('weightKg')),
+          _Row('口径', w.caliber, doubtful: w.isFieldDoubtful('caliber')),
+          _Row('射击模式', w.fireModes,
+              doubtful: w.isFieldDoubtful('fireModes')),
+          _Row('进度线', w.track, doubtful: w.isFieldDoubtful('track')),
+          _Row('解锁', w.unlock, doubtful: w.isFieldDoubtful('unlock')),
+          if (w.doubtfulFields.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            const Text(
+              '带 ? 的字段：几家资料对不上，或者只有单一来源。以游戏内实际为准。',
+              style: TextStyle(color: C.textDim, fontSize: 14, height: 1.5),
+            ),
+          ],
+          const SizedBox(height: 22),
+          const Text('爆头伤害 / 护甲等级',
+              style: TextStyle(
+                  color: C.text, fontSize: 16, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 10),
+          // 三行固定画满，没查到的格子显示横杠。
+          // 空着不能渲染成 0 —— 那等于告诉玩家这枪打上去不掉血。
+          _DamageTable(w.damageRows),
+          if (w.dataNote != null) ...[
             const SizedBox(height: 10),
-            _DamageTable(w.damage),
-            if (w.damage.any((r) => r.doubtful.isNotEmpty)) ...[
-              const SizedBox(height: 10),
-              const Text(
-                '带 ? 的数字存疑：穿甲后伤害反而更高，和其他枪的规律相反。'
-                '资料原值照录，以游戏内实际为准。',
-                style: TextStyle(color: C.textDim, fontSize: 14, height: 1.5),
-              ),
-            ],
+            Text(
+              w.dataNote!,
+              style: const TextStyle(
+                  color: C.textDim, fontSize: 14, height: 1.5),
+            ),
           ],
           if (w.attachments.isNotEmpty) ...[
             const SizedBox(height: 22),
@@ -349,7 +359,11 @@ class _Row extends StatelessWidget {
   final String label;
   final String? value;
 
-  const _Row(this.label, this.value);
+  /// 值存疑时在后面缀一个金色问号。
+  /// 值本来就是横杠的字段不要标 —— 横杠已经说明「没有」，再加问号只会更糊涂。
+  final bool doubtful;
+
+  const _Row(this.label, this.value, {this.doubtful = false});
 
   @override
   Widget build(BuildContext context) {
@@ -364,8 +378,18 @@ class _Row extends StatelessWidget {
                 style: const TextStyle(color: C.textDim, fontSize: 14)),
           ),
           Expanded(
-            child: Text(
-              value ?? '—',
+            child: Text.rich(
+              TextSpan(
+                text: value ?? '—',
+                children: [
+                  if (doubtful && value != null)
+                    const TextSpan(
+                      text: ' ?',
+                      style: TextStyle(
+                          color: C.gold, fontWeight: FontWeight.w700),
+                    ),
+                ],
+              ),
               style: TextStyle(
                 color: value == null ? C.textFaint : C.text,
                 fontSize: 14,
@@ -399,14 +423,16 @@ class _DamageTable extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Table(
-          defaultColumnWidth: const FixedColumnWidth(58),
-          columnWidths: const {0: FixedColumnWidth(52)},
+          // 列宽跟着内容走，别写死。以前是固定 58，而「122.21」这种六位数
+          // 要 78 —— 数字会画到隔壁格子上去，调大字号只会更糟。
+          // 整张表外面套着横向滚动，列宽撑开没有关系。
+          defaultColumnWidth: const IntrinsicColumnWidth(),
           children: [
             TableRow(
               children: [
                 for (final h in heads)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.fromLTRB(0, 6, 16, 6),
                     child: Text(h, style: head()),
                   ),
               ],
@@ -415,7 +441,7 @@ class _DamageTable extends StatelessWidget {
               TableRow(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 7),
+                    padding: const EdgeInsets.fromLTRB(0, 7, 16, 7),
                     child: Text(r.ammo,
                         style: const TextStyle(
                             color: C.gold,
@@ -423,32 +449,41 @@ class _DamageTable extends StatelessWidget {
                             fontWeight: FontWeight.w600)),
                   ),
                   for (int tier = 0; tier < 5; tier++)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            r.at(tier).toStringAsFixed(
-                                r.at(tier) == r.at(tier).roundToDouble() ? 0 : 2),
-                            style: const TextStyle(
-                              color: C.text,
-                              fontSize: 13,
-                              fontFeatures: [FontFeature.tabularFigures()],
+                    Builder(builder: (_) {
+                      // 没查到就是横杠。千万别落回 0 —— 这张表是拿来
+                      // 判「打不打得穿」的，一个假的 0 会让人换枪。
+                      final v = r.at(tier);
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 7, 16, 7),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              v == null
+                                  ? '—'
+                                  : v.toStringAsFixed(
+                                      v == v.roundToDouble() ? 0 : 2),
+                              style: TextStyle(
+                                color: v == null ? C.textFaint : C.text,
+                                fontSize: 13,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ],
+                              ),
                             ),
-                          ),
-                          if (r.isDoubtful(tier))
-                            const Padding(
-                              padding: EdgeInsets.only(left: 3),
-                              child: Text('?',
-                                  style: TextStyle(
-                                      color: C.gold,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700)),
-                            ),
-                        ],
-                      ),
-                    ),
+                            if (v != null && r.isDoubtful(tier))
+                              const Padding(
+                                padding: EdgeInsets.only(left: 3),
+                                child: Text('?',
+                                    style: TextStyle(
+                                        color: C.gold,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700)),
+                              ),
+                          ],
+                        ),
+                      );
+                    }),
                 ],
               ),
           ],

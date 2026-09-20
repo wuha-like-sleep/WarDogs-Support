@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/settings.dart';
 import '../data/updater.dart';
 import '../theme.dart';
+import 'privacy_screen.dart';
 import '../widgets/page_body.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -193,6 +194,27 @@ class _MoreScreenState extends State<MoreScreen> {
                   style: TextStyle(color: C.textDim, fontSize: 14, height: 1.7),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _Card(
+            child: InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyScreen()),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text('隐私政策',
+                          style: TextStyle(color: C.text, fontSize: 16)),
+                    ),
+                    Icon(Icons.chevron_right, color: C.textFaint, size: 20),
+                  ],
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 12),

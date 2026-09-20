@@ -18,20 +18,27 @@ class _CompareScreenState extends State<CompareScreen> {
   static const _ammoNames = ['FMJ', 'HP', 'AP'];
   static const _tierNames = ['无甲', '1级', '2级', '3级', '4级'];
 
-  AmmoRow _rowOf(Weapon w) => w.damage.firstWhere(
-        (r) => r.ammo == _ammoNames[_ammo],
-        orElse: () => const AmmoRow('', 0, 0, 0, 0, 0),
-      );
+  /// 这把枪有没有当前这种弹药的一行。没有就是没有，
+  /// 别像以前那样回退成一行全 0 —— 那会把「没查到」画成一条 0 伤害的柱子，
+  /// 玩家会当成「这枪打这种弹没用」而换掉它。
+  AmmoRow? _rowOf(Weapon w) {
+    for (final r in w.damage) {
+      if (r.ammo == _ammoNames[_ammo]) return r;
+    }
+    return null;
+  }
 
-  double _damageOf(Weapon w) => _rowOf(w).at(_tier);
+  double? _damageOf(Weapon w) => _rowOf(w)?.at(_tier);
 
-  bool _isDoubtful(Weapon w) => _rowOf(w).isDoubtful(_tier);
+  bool _isDoubtful(Weapon w) => _rowOf(w)?.isDoubtful(_tier) ?? false;
 
   @override
   Widget build(BuildContext context) {
-    final ranked = kWeapons.where((w) => w.damage.isNotEmpty).toList()
-      ..sort((a, b) => _damageOf(b).compareTo(_damageOf(a)));
-    final top = ranked.isEmpty ? 1.0 : _damageOf(ranked.first);
+    // 只排当前这一组里真有数值的枪。某一格是横杠的（比如 PKM 的 4 级甲）
+    // 在这一组里就不出现，切回有数据的组又会回来。
+    final ranked = kWeapons.where((w) => _damageOf(w) != null).toList()
+      ..sort((a, b) => _damageOf(b)!.compareTo(_damageOf(a)!));
+    final top = ranked.isEmpty ? 1.0 : _damageOf(ranked.first)!;
 
     return Scaffold(
       appBar: AppBar(title: const Text('伤害对比')),
@@ -42,7 +49,8 @@ class _CompareScreenState extends State<CompareScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              '${kWeapons.length} 把枪里，有 ${ranked.length} 把收录了数值',
+              '${_ammoNames[_ammo]} 打${_tierNames[_tier]}：'
+              '${kWeapons.length} 把枪里有 ${ranked.length} 把收录了数值',
               style: const TextStyle(color: C.textDim, fontSize: 14),
             ),
           ),
@@ -57,47 +65,67 @@ class _CompareScreenState extends State<CompareScreen> {
             index: _tier,
             onChanged: (i) => setState(() => _tier = i),
           ),
-          const SizedBox(height: 18),
+          // 图例放在柱子上面。以前它在页尾，收录的枪一多就被挤到屏幕外，
+          // 玩家只看得见金色问号、看不见那句「存疑」—— 等于没标。
+          Padding(
+            padding: const EdgeInsets.only(top: 14, bottom: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 5),
+                  child: SizedBox(
+                    width: 8,
+                    height: 8,
+                    child: DecoratedBox(
+                      decoration:
+                          BoxDecoration(color: C.gold, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    ranked.any(_isDoubtful)
+                        ? '金色 = 本组伤害最高 · 带 ? 的数字存疑，以游戏内实际为准'
+                        : '金色 = 本组伤害最高',
+                    style: const TextStyle(
+                        color: C.textDim, fontSize: 13, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (ranked.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Text(
+                '这一组还没有可靠数值。\n'
+                '不是 App 坏了 —— 是几家资料在这一格上对不上，'
+                '与其给你一个编的数，不如空着。',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: C.textDim, fontSize: 14, height: 1.6),
+              ),
+            ),
           for (final w in ranked)
             _Bar(
               name: w.name,
               category: w.category,
-              value: _damageOf(w),
-              ratio: top <= 0 ? 0 : _damageOf(w) / top,
+              value: _damageOf(w)!,
+              ratio: top <= 0 ? 0 : _damageOf(w)! / top,
               // 金色标的是「这一组里最高」——一个页面上就能核对的事实。
               // 别改回按固定血量判「一枪带走」：玩家血量多少没有任何公开出处，
               // 猜错会让人拿着打不死人的枪去拼。
               best: ranked.isNotEmpty && w.name == ranked.first.name,
               doubtful: _isDoubtful(w),
             ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: C.surface,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                      color: C.gold, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text('金色 = 本组伤害最高',
-                      style: TextStyle(color: C.textDim, fontSize: 14)),
-                ),
-              ],
-            ),
+          const SizedBox(height: 4),
+          const Text(
+            '官方没公布过武器数值表，这些数字来自玩家整理的资料站和游戏内图鉴誊抄。'
+            '几家对不上的格子一律留横杠，不替你猜。',
+            style: TextStyle(color: C.textFaint, fontSize: 13, height: 1.5),
           ),
-          if (ranked.any(_isDoubtful)) ...[
-            const SizedBox(height: 10),
-            const Text('带 ? 的数字存疑，以游戏内实际为准',
-                style: TextStyle(color: C.textDim, fontSize: 14)),
-          ],
 
         ],
       ),
@@ -175,46 +203,78 @@ class _Bar extends StatelessWidget {
     required this.doubtful,
   });
 
+  static const _nameStyle =
+      TextStyle(color: C.text, fontSize: 16, fontWeight: FontWeight.w600);
+  static const _catStyle = TextStyle(color: C.textFaint, fontSize: 14);
+
   @override
   Widget build(BuildContext context) {
     final color = best ? C.gold : C.textDim;
+    final valueText =
+        value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2);
+    final valueStyle = TextStyle(
+      color: color,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(name,
-                    style: const TextStyle(
-                        color: C.text,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600)),
-              ),
-              Text(category,
-                  style: const TextStyle(color: C.textFaint, fontSize: 14)),
-              const SizedBox(width: 12),
-              Text(
-                value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2),
-                style: TextStyle(
-                  color: color,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              if (doubtful)
-                const Padding(
-                  padding: EdgeInsets.only(left: 3),
-                  child: Text('?',
+          LayoutBuilder(builder: (ctx, box) {
+            // 名字、分类、数字三样一行放不下就摞起来。
+            // 这里是真的量过再决定的，不是按屏幕宽度猜：字号调到无障碍档位时，
+            // 光一个「342.41」就能吃掉大半行，名字会被挤成 0 宽 —— 枪名整个看不见。
+            final base = DefaultTextStyle.of(ctx).style;
+            final scaler = MediaQuery.textScalerOf(ctx);
+            double widthOf(String s, TextStyle st) => (TextPainter(
+                  text: TextSpan(text: s, style: base.merge(st)),
+                  textDirection: Directionality.of(ctx),
+                  textScaler: scaler,
+                )..layout())
+                .width;
+
+            final needed = widthOf(name, _nameStyle) +
+                widthOf(category, _catStyle) +
+                widthOf(doubtful ? '$valueText ?' : valueText, valueStyle) +
+                20; // 两处间距 + 一点余量
+            final stacked = needed > box.maxWidth;
+
+            final title = Text(name, style: _nameStyle);
+            final cat = Text(category, style: _catStyle);
+            final number = Text.rich(
+              TextSpan(
+                text: valueText,
+                children: [
+                  if (doubtful)
+                    const TextSpan(
+                      text: ' ?',
                       style: TextStyle(
-                          color: C.gold,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700)),
-                ),
-            ],
-          ),
+                          color: C.gold, fontWeight: FontWeight.w700),
+                    ),
+                ],
+              ),
+              style: valueStyle,
+            );
+
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [title, cat, const SizedBox(height: 2), number],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: title),
+                cat,
+                const SizedBox(width: 12),
+                number,
+              ],
+            );
+          }),
           const SizedBox(height: 7),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 不做任何追踪 -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!-- 不收集任何数据。这一条要和 App Store Connect 隐私问卷、
+	     App 内声明、以及 docs/PRIVACY.md 完全一致 ——
+	     审核员会交叉核对，说法不一致会被退。 -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!-- 本 App 自身不直接调用需声明用途的 API。
+	     shared_preferences 与 url_launcher 各自带有自己的隐私清单，
+	     由插件声明其 UserDefaults 等用途。 -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array/>
+</dict>
+</plist>
