@@ -6,7 +6,8 @@
 
 报个坐标就出诸元，不用心算，不用切出游戏。
 
-[![下载](https://img.shields.io/badge/下载-Android%20APK-E0B24A?style=for-the-badge)](https://github.com/wuha-like-sleep/WarDogs-Support/releases/latest)
+[![App Store](https://img.shields.io/badge/App%20Store-下载-0D96F6?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/id6812643556)
+[![Android](https://img.shields.io/badge/Android-下载%20APK-E0B24A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/wuha-like-sleep/WarDogs-Support/releases/latest)
 [![离线](https://img.shields.io/badge/完全离线-无需联网-2ea043?style=for-the-badge)](#完全离线)
 [![License](https://img.shields.io/badge/代码-GPL--3.0-8A9199?style=for-the-badge)](LICENSE)
 [![Data](https://img.shields.io/badge/数据-CC%20BY--SA%204.0-8A9199?style=for-the-badge)](LICENSE-DATA)
@@ -69,10 +70,26 @@
 
 ## 下载
 
-去 [Releases](https://github.com/wuha-like-sleep/WarDogs-Support/releases/latest) 下载最新的
-APK 安装即可。安装时系统可能提示「未知来源」，允许一次就行。
+### iPhone / iPad
 
-iOS 版本请关注后续发布。
+**[App Store](https://apps.apple.com/app/id6812643556)** — 搜「战狗小助手」也能找到，需要 iOS 15 以上。
+
+想提前试新版本的，走 **[TestFlight](https://testflight.apple.com/join/jWqs19d3)**。
+需要先装 Apple 的 TestFlight App，名额有限、满了就得等。
+测试版可能有没修完的问题，图稳定就用 App Store 那个。
+
+### 安卓
+
+去 **[Releases](https://github.com/wuha-like-sleep/WarDogs-Support/releases/latest)**
+下载最新的 APK 装上。系统可能提示「未知来源」，允许一次就行。
+
+安卓没有上应用商店，只在这里发。**所以它不会自动更新** ——
+App 里「更多 → 检查更新」可以手动看有没有新版本。
+
+### 两个平台的版本不一定同步
+
+iOS 要过审核，安卓不用，所以安卓通常会领先几天。
+两边功能一样，不用担心用哪个。
 
 ---
 
