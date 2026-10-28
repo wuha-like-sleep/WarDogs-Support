@@ -231,7 +231,38 @@ void main() {
     }
   });
 
-  testWidgets('小屏上切到敌人坐标，那个框必须滚进视野', (t) async {
+  // 「正在输入的那个框看不看得见」—— 这条不能只验一个尺寸。
+  // Duo 外屏 466×678 比 iPhone SE 还矮 11pt，键盘弹出后余量最紧张。
+  for (final (label, w, h) in [
+    ('iPhone SE 一代 320×568', 320.0, 568.0),
+    ('Duo 外屏 466×678', 466.0, 678.0),
+  ]) {
+    testWidgets('$label：切到敌人坐标，那个框必须滚进视野', (t) async {
+      t.view.physicalSize = Size(w * 3, h * 3);
+      t.view.devicePixelRatio = 3.0;
+      addTearDown(t.view.resetPhysicalSize);
+      addTearDown(t.view.resetDevicePixelRatio);
+
+      await pumpScreen(t);
+      await press(t, '下一项');
+      await press(t, '下一项');
+      await t.pumpAndSettle();
+
+      final lbl = find.text('敌人位置');
+      expect(lbl, findsOneWidget, reason: '$label 上敌人位置整块没构建');
+
+      final r = t.getRect(lbl);
+      expect(r.top, greaterThanOrEqualTo(0.0),
+          reason: '$label：「敌人位置」在屏幕上方外面（top=${r.top}）');
+      // 光标签可见没用，真正要输入的是它下面那两个框（高 52 + 6 间距）
+      expect(r.bottom + 58, lessThanOrEqualTo(h),
+          reason: '$label：输入框超出屏幕 '
+              '（标签底 ${r.bottom}，框底 ${r.bottom + 58}，屏高 $h）—— '
+              '玩家看不见自己在往哪个框里敲');
+    });
+  }
+
+  testWidgets('旧版单尺寸用例（保留）', (t) async {
     // 320×568（iPhone SE 一代）：目前能装下的最小屏。
     // 键盘一弹，敌人坐标那两个框就在折叠线附近。
     // 这条盯的是「正在输入的框到底看不看得见」，

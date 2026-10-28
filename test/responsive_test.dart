@@ -17,6 +17,10 @@ const _sizes = <String, Size>{
   'iPhone 17 Pro 402×874': Size(402, 874),
   'iPhone Pro Max 440×956': Size(440, 956),
   'iPad 768×1024': Size(768, 1024),
+  // iPhone Duo 折叠屏：外屏矮而宽，内屏接近小平板。
+  // 外屏比 iPhone SE 还矮 11pt，键盘弹出后余量最紧张。
+  'Duo 外屏 466×678': Size(466, 678),
+  'Duo 内屏 669×951': Size(669, 951),
 };
 
 const _scales = <double>[1.0, 1.3, 1.8];
